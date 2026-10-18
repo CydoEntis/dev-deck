@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 # Dev Deck installer (Windows). Pulls pinned upstream skills, installs them plus
 # the personal pipeline/init skills into the host skill dirs, writes role agent
 # files (models substituted from dev-deck.config.json), and registers MCP servers.
@@ -7,8 +7,7 @@
 param([string]$Root = (Split-Path -Parent $PSScriptRoot))
 
 $ErrorActionPreference = 'Stop'
-$Home = $HOME
-$SkillTargets = @((Join-Path $Home '.claude/skills'))
+$SkillTargets = @((Join-Path $HOME '.claude/skills'))
 $Issues = @()
 
 function Read-Json([string]$Path) {
@@ -49,7 +48,7 @@ foreach ($Pin in $Up.pins) {
             $Args = @('clone', '--depth', '1')
             if ($Pin.ref -and $Pin.ref -ne 'main' -and $Pin.ref -ne 'master') { $Args += @('--branch', $Pin.ref) }
             $Args += @($Pin.url, $Dest)
-            & git @Args 2>&1 | Out-Null
+            & git @Args 2>$null | Out-Null
             if ($LASTEXITCODE -ne 0) { $Issues += "clone failed: $($Pin.name) ($($Pin.url))"; continue }
             Write-Host "fetched $($Pin.name) ($($Pin.url))"
         } else {
@@ -116,8 +115,8 @@ Write-Host "installed $Installed skill copies, skipped $Skipped personal conflic
 $AgentTemplates = Get-ChildItem (Join-Path $Root 'agents') -Filter '*.md' -File
 foreach ($Host in $Hosts) {
     switch ($Host) {
-        'opencode' { $AgentDir = Join-Path $Home '.config/opencode/agent' }
-        'claude'   { $AgentDir = Join-Path $Home '.claude/agents' }
+        'opencode' { $AgentDir = Join-Path $HOME '.config/opencode/agent' }
+        'claude'   { $AgentDir = Join-Path $HOME '.claude/agents' }
         default    {
             Write-Host "note    host '$Host': roles stay as instruction files in the repo" -ForegroundColor DarkGray
             continue
@@ -150,7 +149,7 @@ foreach ($Host in $Hosts) {
 $McpFile = Join-Path $Root 'mcp/context-mode.json'
 $Mcp = Read-Json $McpFile
 if ($Hosts -contains 'opencode') {
-    $Ocfg = Join-Path $Home '.config/opencode/opencode.json'
+    $Ocfg = Join-Path $HOME '.config/opencode/opencode.json'
     if (Test-Path $Ocfg) {
         $Backup = "$Ocfg.bak-$(Get-Date -Format yyyyMMdd-HHmmss)"
         Copy-Item $Ocfg $Backup
@@ -185,3 +184,4 @@ if ($Issues.Count -gt 0) {
     exit 1
 }
 Write-Host "`nDone. Run install\doctor.ps1 to verify." -ForegroundColor Green
+
