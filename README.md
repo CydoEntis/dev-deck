@@ -89,7 +89,7 @@ Windows, macOS and Linux.
 **Claude Code**
 
 ```bash
-claude plugin marketplace add CydoEntle/dev-deck
+claude plugin marketplace add CydoEntis/dev-deck
 claude plugin install developer@dev-deck    # building software
 claude plugin install designer@dev-deck     # designing apps
 ```
@@ -97,7 +97,7 @@ claude plugin install designer@dev-deck     # designing apps
 **Codex**
 
 ```bash
-codex plugin marketplace add CydoEntle/dev-deck
+codex plugin marketplace add CydoEntis/dev-deck
 codex plugin add developer@dev-deck         # building software
 codex plugin add designer@dev-deck          # designing apps
 ```
@@ -156,7 +156,7 @@ each tool's MCP command. It is the way to get per-role models and Codex roles.
 **Windows**
 
 ```powershell
-git clone https://github.com/CydoEntle/dev-deck C:\dev\dev-deck
+git clone https://github.com/CydoEntis/dev-deck C:\dev\dev-deck
 cd C:\dev\dev-deck
 copy dev-deck.config.json.example dev-deck.config.json
 notepad dev-deck.config.json      # set decks, hosts and models
@@ -167,7 +167,7 @@ notepad dev-deck.config.json      # set decks, hosts and models
 **macOS and Linux** (Python 3.8 or newer)
 
 ```bash
-git clone https://github.com/CydoEntle/dev-deck ~/dev-deck
+git clone https://github.com/CydoEntis/dev-deck ~/dev-deck
 cd ~/dev-deck
 cp dev-deck.config.json.example dev-deck.config.json
 # edit dev-deck.config.json
