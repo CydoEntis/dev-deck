@@ -42,12 +42,12 @@ foreach ($s in $SkillRoots) {
     foreach ($name in $Retire) {
         $p = Join-Path $s $name
         if (-not (Test-Path $p)) { continue }
-        $item = Get-Item $p
-        if ($item.LinkType -eq 'Junction') {
+        $item = Get-Item $p -Force
+        if ($item.LinkType) {
             $target = ($item.Target -join ', ')
-            Remove-Item $p -Force
+            [System.IO.Directory]::Delete($p)
             Write-Host "  junction removed: $s/$name  (source kept: $target)"
-        } else {
+        } elseif ((Get-Item $p).PSIsContainer) {
             Move-Item $p (Join-Path $RetiredDir "$name") -Force
             Write-Host "  moved to retired: $s/$name -> retired/$name"
         }
