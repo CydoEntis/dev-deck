@@ -190,30 +190,72 @@ Claude Code, and `~/.codex/agents/<role>.toml` for Codex.
 
 ## Decks
 
-Dev Deck is the platform. You install one or both decks from it:
+Dev Deck is the platform. A **deck** is a set of skills you install from it. There
+are two decks, and you can install either one or both.
 
-- **developer** — for building software. The planner, builder and reviewer
-  roles, the `pipeline` and `init` skills, and the pinned workflow skills:
-  pstack, Matt Pocock's pack, ponytail, anti-slop, caveman, and roadmap. Roles
-  and Context Mode are developer-deck features.
-- **designer** — for designing apps. Two upstream skill sets:
-  - **Impeccable** (`pbakaus/impeccable`, Apache-2.0): `/impeccable`, with 24
-    commands for the design workflow. Start every new project with
-    `/impeccable init`, which writes `PRODUCT.md`. Commands include `critique`,
-    `audit`, `polish`, `distill`, `animate`, `bolder`, and `quieter`.
-  - **Intent** (`ghaida/intent`, CC0), picked: `/evaluate` (heuristic review),
-    `/wireframe`, `/articulate` (UI copy), `/include` (accessibility), and
-    `/fortify` (edge cases and error states). The rest of Intent is left out.
-    Some of these point at skills that are not installed, such as `/journey` and
-    `/organize`. They still work, but the cross-references do not resolve.
-  - **Emil Kowalski's skills** (`emilkowalski/skills`, MIT), picked: motion and
-    polish. `emil-design-eng`, `animate`, `animation-performance`,
-    `review-animations`, `break-ui` (stress-test with worst-case data),
-    `mobile-native`, `apple-design`, and `animation-vocabulary`. `prototype` is
-    left out because the developer deck already has one.
+| | **developer** | **designer** |
+|---|---|---|
+| Use it for | Building software: planning, coding, reviewing | Designing app UI and UX: screens, flows, copy, motion |
+| Roles (planner, builder, reviewer) | Yes | No |
+| Context Mode MCP server | Yes | No |
+| Works in | Claude Code and Codex | Claude Code only |
+| Needs per project | Optional `AGENTS.md` (run `init`) | `/impeccable init` writes `PRODUCT.md` |
 
-The two decks are separate, so a designer install does not write roles or
-register Context Mode. Install both with `"decks": ["developer", "designer"]`.
+### When to use which
+
+- **Just building a feature or fixing a bug?** Install `developer`.
+- **Working on a screen's look, layout, copy, or motion?** Install `designer`.
+- **Doing both?** Install both. A design task can use `designer` skills in a
+  Claude Code session, and a build task can use the `developer` pipeline.
+
+### What each deck installs
+
+**developer**
+- The `planner`, `builder` and `reviewer` roles, for Claude Code and Codex.
+- The `pipeline` and `init` skills.
+- Pinned workflow skills: pstack, Matt Pocock's pack, ponytail, anti-slop,
+  caveman, and roadmap (required; the doctor fails without it).
+
+**designer**
+- **Impeccable** (`pbakaus/impeccable`, Apache-2.0): the whole `/impeccable`
+  skill, with 24 commands. Start each project with `/impeccable init`. Common
+  commands: `critique`, `audit`, `polish`, `shape`, `animate`, `bolder`,
+  `quieter`.
+- **Intent** (`ghaida/intent`, CC0), picked: `/evaluate` (heuristic review
+  ranked by severity), `/wireframe`, `/articulate` (UI copy), `/include`
+  (accessibility), and `/fortify` (empty, loading and error states). The rest
+  of Intent is left out. Some picks point at skills that are not installed,
+  such as `/journey` and `/organize`. They still work, but those references
+  do not resolve.
+- **Emil Kowalski's skills** (`emilkowalski/skills`, MIT), picked: motion and
+  polish. `emil-design-eng`, `animate`, `animation-performance`,
+  `review-animations`, `break-ui` (stress-test with worst-case data),
+  `mobile-native`, `apple-design`, and `animation-vocabulary`. `prototype` is
+  left out because the developer deck already has one.
+
+### Install one, the other, or both
+
+Set `decks` in `dev-deck.config.json`, then run the installer:
+
+```json
+"decks": ["developer"]               // building software only
+"decks": ["designer"]                // design work only
+"decks": ["developer", "designer"]   // both
+```
+
+The installer only fetches and installs what the chosen decks need. Switching a
+deck off removes its skills the next time you run the installer. It does not
+remove the role files or the Context Mode registrations for `developer`. Delete
+`~/.claude/agents/{planner,builder,reviewer}.md` and the `context-mode` entries
+by hand if you want them gone.
+
+### Change the designer picks
+
+Each upstream pin in `upstream.json` can take an `include` list, which installs
+only the named skills, or an `exclude` list, which drops the named ones. The
+designer picks are the `include` lists on the `intent` and `emil` pins. Edit
+those lists and re-run the installer. Impeccable is one skill with its commands
+inside, so it is installed whole.
 
 ## Prerequisites
 
@@ -333,10 +375,12 @@ file, for example `Select-String "^model:" $HOME\.claude\agents\planner.md`.
 
 ## Hosts
 
-Supported hosts: **Claude Code and Codex.** Both get the three roles as native
-subagents: Claude Code from `~/.claude/agents` as markdown, Codex from
-`~/.codex/agents` as TOML. Both also get Context Mode registered as an MCP
-server.
+Supported hosts: **Claude Code and Codex.** The `developer` deck gives both hosts
+the three roles as native subagents: Claude Code from `~/.claude/agents` as
+markdown, Codex from `~/.codex/agents` as TOML. Both also get Context Mode
+registered as an MCP server. The `designer` deck's skills are installed only
+into Claude Code's skill folder (`~/.claude/skills`), so Codex does not get
+them.
 
 Pi, OpenCode and DeepSeek are not supported. Pi has no subagents, so the three
 roles cannot run as separate agents there.
