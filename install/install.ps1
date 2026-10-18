@@ -15,6 +15,21 @@ function Read-Json([string]$Path) {
     Get-Content $Path -Raw | ConvertFrom-Json
 }
 
+# Run git without its stderr tripping ErrorActionPreference=Stop.
+# git writes progress ("Cloning into…", "From …") to stderr; under EAP=Stop
+# PowerShell surfaces that as a terminating NativeCommandError. Drop the
+# preference around the call, discard stderr, and return the real exit code.
+function Invoke-Git([string[]]$GitArgs) {
+    $prev = $global:ErrorActionPreference
+    try {
+        $global:ErrorActionPreference = 'SilentlyContinue'
+        & git @GitArgs 2>$null | Out-Null
+        return $LASTEXITCODE
+    } finally {
+        $global:ErrorActionPreference = $prev
+    }
+}
+
 # --- config -------------------------------------------------------------
 $CfgPath = Join-Path $Root 'dev-deck.config.json'
 if (-not (Test-Path $CfgPath)) {
@@ -45,20 +60,20 @@ foreach ($Pin in $Up.pins) {
     if ($Pin.url) {
         $Dest = Join-Path $CacheDir $Pin.name
         if (-not (Test-Path (Join-Path $Dest '.git'))) {
-            $Args = @('clone', '--depth', '1')
-            if ($Pin.ref -and $Pin.ref -ne 'main' -and $Pin.ref -ne 'master') { $Args += @('--branch', $Pin.ref) }
-            $Args += @($Pin.url, $Dest)
-            & git @Args 2>$null | Out-Null
-            if ($LASTEXITCODE -ne 0) { $Issues += "clone failed: $($Pin.name) ($($Pin.url))"; continue }
+            $gitArgs = @('clone', '--depth', '1')
+            if ($Pin.ref -and $Pin.ref -ne 'main' -and $Pin.ref -ne 'master') { $gitArgs += @('--branch', $Pin.ref) }
+            $gitArgs += @($Pin.url, $Dest)
+            $code = Invoke-Git $gitArgs
+            if ($code -ne 0) { $Issues += "clone failed: $($Pin.name) ($($Pin.url))"; continue }
             Write-Host "fetched $($Pin.name) ($($Pin.url))"
         } else {
             if ($Pin.ref -and $Pin.ref -ne 'main' -and $Pin.ref -ne 'master') {
-                & git -C $Dest fetch --depth 1 origin $Pin.ref 2>$null | Out-Null
-                & git -C $Dest reset --hard "origin/$($Pin.ref)" 2>$null | Out-Null
+                $code = Invoke-Git @('-C', $Dest, 'fetch', '--depth', '1', 'origin', $Pin.ref)
+                if ($code -eq 0) { $code = Invoke-Git @('-C', $Dest, 'reset', '--hard', "origin/$($Pin.ref)") }
             } else {
-                & git -C $Dest pull --ff-only 2>$null | Out-Null
+                $code = Invoke-Git @('-C', $Dest, 'pull', '--ff-only')
             }
-            if ($LASTEXITCODE -ne 0) { $Issues += "update failed: $($Pin.name)"; continue }
+            if ($code -ne 0) { $Issues += "update failed: $($Pin.name)"; continue }
             Write-Host "updated $($Pin.name)"
         }
         $Src = $Dest
