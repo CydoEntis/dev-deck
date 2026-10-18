@@ -129,13 +129,14 @@ Write-Host "installed $Installed skill copies, skipped $Skipped personal conflic
 # --- role agent files -----------------------------------------------------
 $AgentTemplates = Get-ChildItem (Join-Path $Root 'agents') -Filter '*.md' -File
 foreach ($hostName in $Hosts) {
-    switch ($hostName) {
-        'opencode' { $AgentDir = Join-Path $HOME '.config/opencode/agent' }
-        'claude'   { $AgentDir = Join-Path $HOME '.claude/agents' }
-        default    {
-            Write-Host "note    host '$hostName': roles stay as instruction files in the repo" -ForegroundColor DarkGray
-            continue
-        }
+    $AgentDir = switch ($hostName) {
+        'opencode' { Join-Path $HOME '.config/opencode/agent' }
+        'claude'   { Join-Path $HOME '.claude/agents' }
+        default    { $null }
+    }
+    if ($null -eq $AgentDir) {
+        Write-Host "note    host '$hostName': roles stay as instruction files in the repo" -ForegroundColor DarkGray
+        continue
     }
     New-Item -ItemType Directory -Force -Path $AgentDir | Out-Null
     foreach ($Tpl in $AgentTemplates) {
