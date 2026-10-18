@@ -1,11 +1,12 @@
 {
-  "$schema": "Pinned external skill sources. `url` + `ref` for git repos, or `localPath` for a local clone. `skillsPath` is where SKILL.md folders live inside that source. The installer discovers every subdirectory containing a SKILL.md under skillsPath.",
+  "$schema": "Pinned external skill sources. `url` + `ref` for git repos, or `localPath` for a local clone. `skillsPath` is where SKILL.md folders live inside that source. `packs` lists which packs (see dev-deck.config.json) install this pin. The installer discovers every subdirectory containing a SKILL.md under skillsPath.",
   "pins": [
     {
       "name": "pstack",
       "url": "https://github.com/michael-denyer/pstack-claude",
       "ref": "main",
       "skillsPath": "plugins/pstack/skills",
+      "packs": ["dev-deck"],
       "note": "poteto's pstack pipeline (Claude port). Official Cursor source: github.com/cursor/plugins (pstack)."
     },
     {
@@ -13,6 +14,7 @@
       "url": "https://github.com/mattpocock/skills",
       "ref": "main",
       "skillsPath": "skills",
+      "packs": ["dev-deck"],
       "note": "Matt Pocock's engineering skills pack (planning, building, review, deploy)."
     },
     {
@@ -20,6 +22,7 @@
       "url": "https://github.com/DietrichGebert/ponytail",
       "ref": "main",
       "skillsPath": "skills",
+      "packs": ["dev-deck"],
       "note": "YAGNI 'lazy senior dev' skill set: /ponytail-review, /ponytail-audit, /ponytail-debt."
     },
     {
@@ -27,6 +30,7 @@
       "url": "https://github.com/dmmulroy/anti-slop",
       "ref": "main",
       "skillsPath": "skills",
+      "packs": ["dev-deck"],
       "note": "Anti-slop Oxlint plugins for AI-generated code. The only skill (install-anti-slop) installs them into a repo."
     },
     {
@@ -34,6 +38,7 @@
       "url": "https://github.com/juliusbrussee/caveman",
       "ref": "main",
       "skillsPath": "skills",
+      "packs": ["dev-deck"],
       "note": "Decluttered-output skill (caveman, caveman-commit, caveman-compress, ...)."
     },
     {
@@ -41,6 +46,7 @@
       "url": "https://github.com/CydoEntis/roadmap",
       "ref": "master",
       "skillsPath": "skills",
+      "packs": ["dev-deck"],
       "required": true,
       "note": "Planning spine (living plan, reconcile, ADRs). Required: doctor fails if it is not installed."
     }

@@ -1,4 +1,5 @@
 {
+  "packs": ["dev-deck"],
   "hosts": ["claude", "codex"],
   "models": {
     "claude": { "planner": "", "builder": "", "reviewer": "" },
@@ -6,6 +7,12 @@
   },
   "_readme": [
     "Copy this file to dev-deck.config.json (git-ignored).",
+    "",
+    "packs: which packs to install. Pick any of:",
+    "  \"dev-deck\"  the planner/builder/reviewer roles, pipeline and init skills, and the",
+    "               pinned workflow skills (pstack, Matt Pocock, ponytail, caveman, roadmap, ...)",
+    "  \"designer\"  app design skills (no skills yet)",
+    "  Only pins whose \"packs\" in upstream.json include an enabled pack are installed.",
     "",
     "models: one map per host. The installer reads models[<host>][<role>] for",
     "  each host it writes role files for.",

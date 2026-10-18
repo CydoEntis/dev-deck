@@ -39,6 +39,7 @@ if (-not (Test-Path $CfgPath)) {
 }
 $Cfg = Read-Json $CfgPath
 $Hosts = @($Cfg.hosts)
+$Packs = @($Cfg.packs)
 function Get-Model([string]$HostName, [string]$Role) {
     $v = $Cfg.models.$HostName.$Role
     if ($null -eq $v -or $v -eq '') { return '' }
@@ -53,6 +54,10 @@ $Manifest = @{ skills = @{}; agents = @{}; mcp = @{}; installedAt = (Get-Date).T
 $SkillNames = @{}
 
 foreach ($Pin in $Up.pins) {
+    if (-not (@($Pin.packs) | Where-Object { $Packs -contains $_ })) {
+        Write-Host "skip    $($Pin.name) (pack not enabled)" -ForegroundColor DarkGray
+        continue
+    }
     if (-not $Pin.url -and -not $Pin.localPath) {
         Write-Host "skip    $($Pin.name) (no url or localPath yet)" -ForegroundColor DarkGray
         continue
@@ -91,20 +96,27 @@ foreach ($Pin in $Up.pins) {
 }
 
 # --- install skills -------------------------------------------------------
-# Personal skills ship from the repo itself: pipeline, init.
+# Personal skills ship from the repo, one folder per pack: skills/<pack>/<name>.
 $ManifestSkills = @{}
-$Personal = @()
-Get-ChildItem -Path (Join-Path $Root 'skills') -Directory | ForEach-Object {
-    $ManifestSkills[$_.Name] = 'dev-deck'
-    $Personal += $_
+$PersonalSrc = @{}
+foreach ($Pack in $Packs) {
+    $PackDir = Join-Path $Root "skills/$Pack"
+    if (-not (Test-Path $PackDir)) { Write-Host "note    pack '$Pack' has no skills yet" -ForegroundColor DarkGray; continue }
+    Get-ChildItem -Path $PackDir -Directory | ForEach-Object {
+        $ManifestSkills[$_.Name] = $Pack
+        $PersonalSrc[$_.Name] = $_.FullName
+    }
 }
-foreach ($K in $SkillNames.Keys) { $ManifestSkills[$K] = $SkillNames[$K].source }
+# Upstream skills fill in names not claimed by a personal skill (personal wins).
+foreach ($K in $SkillNames.Keys) {
+    if (-not $PersonalSrc.ContainsKey($K)) { $ManifestSkills[$K] = $SkillNames[$K].source }
+}
 
 $Installed = 0
 $Skipped = 0
 foreach ($Name in $ManifestSkills.Keys) {
-    if ($ManifestSkills[$Name] -eq 'dev-deck') {
-        $SrcDir = (Get-ChildItem (Join-Path $Root 'skills') -Directory | Where-Object Name -eq $Name).FullName
+    if ($PersonalSrc.ContainsKey($Name)) {
+        $SrcDir = $PersonalSrc[$Name]
     } else {
         $SrcDir = $SkillNames[$Name].path
     }
@@ -114,7 +126,7 @@ foreach ($Name in $ManifestSkills.Keys) {
         $Marker = Join-Path $Dst '.devdeck'
         if ((Test-Path $Dst) -and (-not (Test-Path $Marker))) {
             $IsLink = [bool]((Get-Item $Dst -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)
-            if ($IsLink -and $ManifestSkills[$Name] -ne 'dev-deck') {
+            if ($IsLink -and -not $PersonalSrc.ContainsKey($Name)) {
                 # Link from an earlier manual setup, now owned by a pinned upstream.
                 # rmdir removes the link only, never what it points at.
                 cmd /c rmdir "$Dst" | Out-Null
@@ -159,7 +171,9 @@ function ConvertTo-CodexAgent([string]$Raw, [string]$Role, [string]$Model) {
     return (($Lines -join "`n") + "`n")
 }
 
-$AgentTemplates = Get-ChildItem (Join-Path $Root 'agents') -Filter '*.md' -File
+# Role files belong to the dev-deck pack only.
+$AgentTemplates = @()
+if ($Packs -contains 'dev-deck') { $AgentTemplates = @(Get-ChildItem (Join-Path $Root 'agents') -Filter '*.md' -File) }
 foreach ($hostName in $Hosts) {
     $AgentDir = switch ($hostName) {
         'claude'   { Join-Path $HOME '.claude/agents' }
@@ -200,7 +214,7 @@ function Invoke-Quiet([string]$Exe, [string[]]$CmdArgs) {
 }
 
 foreach ($hostName in @('claude', 'codex')) {
-    if ($Hosts -notcontains $hostName) { continue }
+    if ($Hosts -notcontains $hostName -or $Packs -notcontains 'dev-deck') { continue }
     if (-not (Get-Command $hostName -ErrorAction SilentlyContinue)) {
         $Issues += "$hostName CLI not found - MCP not registered for $hostName"
         continue

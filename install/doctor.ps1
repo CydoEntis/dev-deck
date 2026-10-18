@@ -27,7 +27,9 @@ if (-not (Test-Path $Cfg)) {
 
 # Dev Deck role files (named after agents/*.md) must have no unsubstituted
 # template vars. Other agents in the same dir are not ours to check.
-$Roles = (Get-ChildItem (Join-Path $Root 'agents') -Filter '*.md' -File).BaseName
+$Packs = @((Get-Content $Cfg -Raw | ConvertFrom-Json).packs)
+$Roles = @()
+if ($Packs -contains 'dev-deck') { $Roles = (Get-ChildItem (Join-Path $Root 'agents') -Filter '*.md' -File).BaseName }
 $AgentDirs = @(
     (Join-Path $HOME '.claude/agents'),
     (Join-Path $HOME '.codex/agents')
@@ -48,12 +50,12 @@ Check "all skill dirs have SKILL.md" { -not $Bad }
 
 # Pins marked "required" in upstream.json must be installed as skills.
 $Up = Get-Content (Join-Path $Root 'upstream.json') -Raw | ConvertFrom-Json
-foreach ($Pin in ($Up.pins | Where-Object { $_.required })) {
+foreach ($Pin in ($Up.pins | Where-Object { $_.required -and (@($_.packs | Where-Object { $Packs -contains $_ }).Count -gt 0) })) {
     Check "required skill '$($Pin.name)' installed" { Test-Path (Join-Path $SkillRoot "$($Pin.name)/SKILL.md") }
 }
 
 # Context Mode must be registered in each enabled host that takes MCP servers.
-$Enabled = @((Get-Content $Cfg -Raw | ConvertFrom-Json).hosts)
+$Enabled = if ($Packs -contains 'dev-deck') { @((Get-Content $Cfg -Raw | ConvertFrom-Json).hosts) } else { @() }
 if ($Enabled -contains 'claude') {
     Check "context-mode registered in claude" { cmd /c "claude mcp get context-mode >nul 2>&1"; $LASTEXITCODE -eq 0 }
 }
