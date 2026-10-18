@@ -53,10 +53,10 @@ foreach ($Pin in $Up.pins) {
             Write-Host "fetched $($Pin.name) ($($Pin.url))"
         } else {
             if ($Pin.ref -and $Pin.ref -ne 'main' -and $Pin.ref -ne 'master') {
-                & git -C $Dest fetch --depth 1 origin $Pin.ref 2>&1 | Out-Null
-                & git -C $Dest reset --hard "origin/$($Pin.ref)" 2>&1 | Out-Null
+                & git -C $Dest fetch --depth 1 origin $Pin.ref 2>$null | Out-Null
+                & git -C $Dest reset --hard "origin/$($Pin.ref)" 2>$null | Out-Null
             } else {
-                & git -C $Dest pull --ff-only 2>&1 | Out-Null
+                & git -C $Dest pull --ff-only 2>$null | Out-Null
             }
             if ($LASTEXITCODE -ne 0) { $Issues += "update failed: $($Pin.name)"; continue }
             Write-Host "updated $($Pin.name)"
