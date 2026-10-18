@@ -190,8 +190,9 @@ Claude Code, and `~/.codex/agents/<role>.toml` for Codex.
 
 ## Prerequisites
 
-- **Windows** with PowerShell 5.1 or newer. The installer is `install\install.ps1`.
-  macOS and Linux are not supported yet (see [Platforms](#platforms)).
+- **Windows** with PowerShell 5.1 or newer (`install\install.ps1`), or
+  **macOS / Linux** with Python 3.8 or newer (`install/install.sh`). See
+  [Platforms](#platforms).
 - **git**, on PATH.
 - **Node.js**, on PATH. Context Mode runs through `npx`.
 - **Claude Code CLI** (`claude`) and/or **Codex CLI** (`codex`), on PATH, for the
@@ -207,7 +208,7 @@ git clone https://github.com/CydoEntis/dev-deck C:\dev\dev-deck
 cd C:\dev\dev-deck
 ```
 
-**2. Create your config and set your models** (see [Configuration](#configuration))
+**2. Create your config: choose your packs and models** (see [Configuration](#configuration))
 
 ```powershell
 copy dev-deck.config.json.example dev-deck.config.json
@@ -220,11 +221,11 @@ notepad dev-deck.config.json
 .\install\install.ps1
 ```
 
-It pulls the pinned upstreams into `cache/`, copies their skills into
-`~/.claude/skills`, writes the three role files for each
-host you enabled, writes the `pipeline` and `init` skills, and registers Context
-Mode with Claude Code and Codex. It exits 0 on success and 1 if anything failed,
-with the reason printed. It is idempotent: run it again to refresh.
+It pulls the pinned upstreams for your enabled packs into `cache/`, copies their
+skills into `~/.claude/skills`, and, when the `dev-deck` pack is enabled, writes
+the three role files for each host you enabled and registers Context Mode with
+Claude Code and Codex. It exits 0 on success and 1 if anything failed, with the
+reason printed. It is idempotent: run it again to refresh.
 
 **4. Verify**
 
@@ -250,10 +251,11 @@ a Codex session uses the `codex` slots.
 ## Configuration
 
 `dev-deck.config.json` is git-ignored and lives in the repo root. Start from
-`dev-deck.config.json.example`. It has two keys:
+`dev-deck.config.json.example`. It has three keys:
 
 ```json
 {
+  "packs": ["dev-deck"],
   "hosts": ["claude", "codex"],
   "models": {
     "claude": { "planner": "<model>", "builder": "<model>", "reviewer": "<model>" },
@@ -262,6 +264,12 @@ a Codex session uses the `codex` slots.
 }
 ```
 
+- **`packs`** — which packs to install. `"dev-deck"` is the planner, builder and
+  reviewer roles, the `pipeline` and `init` skills, and the pinned workflow
+  skills. `"designer"` is for app design work and has no skills yet, so it
+  installs nothing for now. Use `["dev-deck"]`, `["designer"]`, or
+  `["dev-deck", "designer"]`. Each pin in `upstream.json` lists the packs that
+  install it.
 - **`hosts`** — which hosts to install for: `"claude"`, `"codex"`, or both.
   Only hosts listed here get role files or MCP registration.
 - **`models.<host>.<role>`** — the model each role uses on that host. Use the
@@ -292,9 +300,12 @@ file, for example `Select-String "^model:" $HOME\.claude\agents\planner.md`.
 
 - **Windows (PowerShell):** supported. `install\install.ps1` and
   `install\doctor.ps1` are the tested path.
-- **macOS and Linux:** not supported yet. `install/install.sh` and
-  `install/doctor.sh` predate the per-host changes and have not been run. Do
-  not rely on them until they are updated.
+- **macOS and Linux:** `install/install.sh` and `install/doctor.sh` run
+  `install/install.py` and `install/doctor.py`, which do the same work as the
+  PowerShell scripts. The Python logic is tested on Windows with Python 3.14
+  and through the shell wrapper under Git Bash. It has **not yet been run on
+  macOS or Linux**, so treat it as untested there until someone runs it. Run
+  `./install/install.sh`, then `./install/doctor.sh`.
 
 ## Hosts
 
@@ -314,8 +325,10 @@ roles cannot run as separate agents there.
   skillsPath). Re-run the installer. Set `"required": true` to make the doctor
   fail when the skill is missing.
 - **Change a role's behavior:** edit `agents/<role>.md`.
-- **Add a host:** add a writer for it in `install/install.ps1`, and a check in
-  `install/doctor.ps1`.
+- **Add a host:** add a writer for it in `install/install.ps1` and
+  `install/install.py`, and a check in `install/doctor.ps1` and `install/doctor.py`.
+- **Add a pack:** make a folder `skills/<pack>/` with one folder per skill, and
+  list the pack name in the `packs` of each pin that belongs to it.
 
 ## FAQ
 
