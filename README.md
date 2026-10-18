@@ -29,7 +29,7 @@ upstream and refreshed by re-running the installer.
 | Maintained by you | Pinned upstream (do not edit) |
 |---|---|
 | 3 role files (`agents/`) | pstack, Matt Pocock, Ponytail, antislop, caveman |
-| 3 convention files (`conventions/`) | roadmap, professor |
+| 3 convention files (`conventions/`) | roadmap |
 
 Your conventions live in `conventions/`. Each project gets a short `AGENTS.md`
 that points at them. To update an upstream, change its pin in `upstream.json`
@@ -235,9 +235,11 @@ The roles and conventions are host-agnostic markdown; the installer maps them
 onto the hosts you enable. On a new machine, clone the repo, fill in the
 config, and run `install.sh` or `install.ps1`.
 
-Supported hosts: **OpenCode, Claude Code, Codex, Pi, DeepSeek harness.** Hosts
-with native subagents (OpenCode, Claude Code) run the three roles as true
-subagents; the others run them as instruction files with sequential handoffs.
+Supported hosts: **Claude Code, Codex, OpenCode, Pi, DeepSeek harness.** Claude
+Code, Codex and OpenCode get the three roles as native subagents (Claude Code
+`~/.claude/agents`, Codex `~/.codex/agents` as TOML, OpenCode
+`~/.config/opencode/agents`). Pi and DeepSeek have no subagent format here, so
+they get the skills only.
 
 ## Contributing
 
