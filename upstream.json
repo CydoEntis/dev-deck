@@ -1,0 +1,54 @@
+{
+  "$schema": "Pinned external skill sources. `url` + `ref` for git repos, or `localPath` for a local clone. `skillsPath` is where SKILL.md folders live inside that source. The installer discovers every subdirectory containing a SKILL.md under skillsPath.",
+  "pins": [
+    {
+      "name": "pstack",
+      "url": "https://github.com/michael-denyer/pstack-claude",
+      "ref": "main",
+      "skillsPath": "skills",
+      "note": "poteto's pstack pipeline (Claude port). Official Cursor source: github.com/cursor/plugins (pstack)."
+    },
+    {
+      "name": "mattpocock",
+      "url": "https://github.com/mattpocock/skills",
+      "ref": "main",
+      "skillsPath": "skills",
+      "note": "Matt Pocock's engineering skills pack (planning, building, review, deploy)."
+    },
+    {
+      "name": "ponytail",
+      "url": "https://github.com/DietrichGebert/ponytail",
+      "ref": "main",
+      "skillsPath": "skills",
+      "note": "YAGNI 'lazy senior dev' skill set: /ponytail-review, /ponytail-audit, /ponytail-debt."
+    },
+    {
+      "name": "antislop",
+      "url": "https://github.com/dmmulroy/antislop",
+      "ref": "main",
+      "skillsPath": "skills",
+      "note": "Anti-AI-slop writing cleanup."
+    },
+    {
+      "name": "caveman",
+      "url": "",
+      "ref": "",
+      "skillsPath": "skills",
+      "note": "Decluttered-output skill. Fill in url/ref when available; installer skips pins with an empty url and no localPath."
+    },
+    {
+      "name": "roadmap",
+      "url": "",
+      "localPath": "C:\\dev\\roadmap",
+      "skillsPath": "skills",
+      "note": "Personal planning spine (living plan, reconcile, ADRs). Update localPath on other machines."
+    },
+    {
+      "name": "professor",
+      "url": "",
+      "localPath": "C:\\dev\\professor",
+      "skillsPath": "skills",
+      "note": "Personal learning skill. Not part of the build pipeline; pinned so it installs everywhere."
+    }
+  ]
+}

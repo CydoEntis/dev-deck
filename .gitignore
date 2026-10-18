@@ -1,0 +1,6 @@
+dev-deck.config.json
+cache/
+retired/
+__pycache__/
+*.pyc
+.DS_Store

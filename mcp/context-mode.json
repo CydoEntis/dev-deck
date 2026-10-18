@@ -1,0 +1,11 @@
+{
+  "_readme": "MCP servers the installer registers for hosts that support MCP config files (opencode: merged into ~/.config/opencode/opencode.json). Edit the command for your Context Mode server, then run the installer. doctor warns if a placeholder is still present.",
+  "servers": {
+    "context-mode": {
+      "type": "local",
+      "command": ["npx", "-y", "REPLACE-WITH-YOUR-CONTEXT-MODE-MCP-PACKAGE"],
+      "environment": {},
+      "enabled": true
+    }
+  }
+}

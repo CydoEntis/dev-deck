@@ -1,0 +1,21 @@
+{
+  "planner": "",
+  "builder": "",
+  "reviewer": "",
+  "hosts": ["opencode", "claude"],
+  "_readme": [
+    "Copy this file to dev-deck.config.json (git-ignored).",
+    "",
+    "Model slots:",
+    "  - leave \"\" to inherit the host's default model",
+    "  - opencode example: \"anthropic/claude-opus-4-5\" or \"openai/gpt-6.1-sol\"",
+    "  - Claude Code example: \"opus\" | \"sonnet\" | \"haiku\"",
+    "  - keep reviewer a DIFFERENT model family than builder",
+    "",
+    "hosts: which agent hosts the installer writes role files for.",
+    "  allowed: opencode, claude, codex, pi, deepseek",
+    "  opencode -> ~/.config/opencode/agent/<role>.md",
+    "  claude   -> ~/.claude/agents/<role>.md",
+    "  others   -> roles stay in the repo as instruction files (see README)"
+  ]
+}
