@@ -56,7 +56,7 @@ Task: "add feature X"   (in a repo whose AGENTS.md references Dev Deck)
               new session · receives ONLY the diff + the plan entry + AGENTS.md
               (not the builder's session or self-report)
               uses: code-review, thermo-nuclear-code-quality-review, blast-radius,
-              swarm, ponytail-review/audit, caveman/antislop
+              swarm, ponytail-review/audit, caveman
               produces: VERDICT: PASS | FAIL + findings
 ```
 
@@ -125,7 +125,8 @@ part of the automated loop; you invoke those skills directly when needed.
 - **Skills:** pstack `create-verification-skill → swarm`, `blast-radius →
   benchmark-checklist`, `interrogate → thermo-nuclear-code-quality-review`;
   Matt `code-review`; `ponytail-review` / `ponytail-audit`; `caveman` +
-  `antislop` keep the output concise.
+  keeps the output concise. (`antislop` is a code lint, not a writing tool:
+  the `install-anti-slop` skill adds Oxlint rules to a repo that asks for them.)
 - **Gap it fills:** Matt's pack has no separate QA/e2e/browser-testing skill —
   testing happens in Build. pstack's verification and swarm skills cover it.
 
@@ -181,7 +182,7 @@ installed but do not run automatically.
 |---|---|---|---|
 | **Planner** | strongest (`{{PLANNER}}`) | roadmap, Matt planning, pstack learn/plan | plan + tickets under `.plan/` |
 | **Builder** | low-cost (`{{BUILDER}}`) | Matt implement, pstack build/clean, ponytail | commits on the branch |
-| **Reviewer** | different-family strong (`{{REVIEWER}}`), isolated | Matt code-review, pstack test, ponytail-review, caveman/antislop | PASS / FAIL + findings |
+| **Reviewer** | different-family strong (`{{REVIEWER}}`), isolated | Matt code-review, pstack test, ponytail-review, caveman | PASS / FAIL + findings |
 
 Each role is a small markdown file. The `model:` frontmatter is a placeholder
 the installer fills from your config, so no model is hard-coded in a shipped
@@ -210,7 +211,9 @@ cp dev-deck.config.json.example dev-deck.config.json
 The installer pulls the pinned upstreams, copies their skills into your host's
 global skill directory, writes the three role files (models substituted),
 writes the `pipeline` and `init` skills, and registers the Context Mode MCP
-server. It is idempotent — run it again at any time to refresh.
+server with Claude Code and Codex (through their own `mcp` CLIs) and with
+OpenCode (in its `opencode.json`). It is idempotent — run it again at any time
+to refresh.
 
 **Set up a project:** in any repo, invoke the **init** skill. It reads your
 manifests, drafts a short `AGENTS.md` (your stack, a pointer to the house
@@ -238,8 +241,8 @@ config, and run `install.sh` or `install.ps1`.
 Supported hosts: **Claude Code, Codex, OpenCode, Pi, DeepSeek harness.** Claude
 Code, Codex and OpenCode get the three roles as native subagents (Claude Code
 `~/.claude/agents`, Codex `~/.codex/agents` as TOML, OpenCode
-`~/.config/opencode/agents`). Pi and DeepSeek have no subagent format here, so
-they get the skills only.
+`~/.config/opencode/agents`). Pi and DeepSeek get the skills only: pi has no
+subagents, so the three roles do not run as separate agents there.
 
 ## Contributing
 
