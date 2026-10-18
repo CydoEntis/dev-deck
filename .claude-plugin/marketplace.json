@@ -1,0 +1,21 @@
+{
+  "name": "dev-deck",
+  "owner": {
+    "name": "CydoEntle"
+  },
+  "metadata": {
+    "description": "Dev Deck: installable skill decks for building software (developer) and designing apps (designer)."
+  },
+  "plugins": [
+    {
+      "name": "developer",
+      "source": "./plugins/developer",
+      "description": "Planner, builder and reviewer roles, the pipeline and init skills, and pinned workflow skills."
+    },
+    {
+      "name": "designer",
+      "source": "./plugins/designer",
+      "description": "Design skills: Impeccable, picked Intent skills, and picked Emil Kowalski motion and polish skills."
+    }
+  ]
+}

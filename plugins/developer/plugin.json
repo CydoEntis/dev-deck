@@ -1,0 +1,9 @@
+{
+  "name": "developer",
+  "version": "1.0.0",
+  "description": "Dev Deck developer deck: planner, builder and reviewer roles, the pipeline and init skills, and pinned workflow skills.",
+  "author": {
+    "name": "CydoEntle"
+  },
+  "repository": "https://github.com/CydoEntle/dev-deck"
+}

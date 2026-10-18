@@ -1,0 +1,4 @@
+interface:
+  display_name: "Roadmap"
+  short_description: "Plan bugs, features and projects into tickets"
+  default_prompt: "Use $roadmap feature to plan a new feature for this project."
