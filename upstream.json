@@ -24,10 +24,10 @@
     },
     {
       "name": "antislop",
-      "url": "https://github.com/dmmulroy/antislop",
+      "url": "https://github.com/dmmulroy/anti-slop",
       "ref": "main",
       "skillsPath": "skills",
-      "note": "Anti-AI-slop writing cleanup."
+      "note": "Anti-slop Oxlint plugins for AI-generated code. The only skill (install-anti-slop) installs them into a repo."
     },
     {
       "name": "caveman",
@@ -38,17 +38,11 @@
     },
     {
       "name": "roadmap",
-      "url": "",
-      "localPath": "C:\\dev\\roadmap",
+      "url": "https://github.com/CydoEntis/roadmap",
+      "ref": "master",
       "skillsPath": "skills",
-      "note": "Personal planning spine (living plan, reconcile, ADRs). Update localPath on other machines."
-    },
-    {
-      "name": "professor",
-      "url": "",
-      "localPath": "C:\\dev\\professor",
-      "skillsPath": "skills",
-      "note": "Personal learning skill. Not part of the build pipeline; pinned so it installs everywhere."
+      "required": true,
+      "note": "Planning spine (living plan, reconcile, ADRs). Required: doctor fails if it is not installed."
     }
   ]
 }
