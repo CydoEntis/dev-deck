@@ -3,7 +3,7 @@
   "servers": {
     "context-mode": {
       "type": "local",
-      "command": ["npx", "-y", "REPLACE-WITH-YOUR-CONTEXT-MODE-MCP-PACKAGE"],
+      "command": ["npx", "-y", "context-mode"],
       "environment": {},
       "enabled": true
     }
