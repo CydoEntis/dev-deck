@@ -39,8 +39,8 @@ if (-not (Test-Path $CfgPath)) {
 }
 $Cfg = Read-Json $CfgPath
 $Hosts = @($Cfg.hosts)
-function Get-Model([string]$Key) {
-    $v = $Cfg.$Key
+function Get-Model([string]$HostName, [string]$Role) {
+    $v = $Cfg.models.$HostName.$Role
     if ($null -eq $v -or $v -eq '') { return '' }
     return $v
 }
@@ -142,9 +142,9 @@ foreach ($hostName in $Hosts) {
         $Content = Get-Content $Tpl.FullName -Raw
         $Role = $Tpl.BaseName
         $Model = switch ($Role) {
-            'planner'  { Get-Model 'planner' }
-            'builder'  { Get-Model 'builder' }
-            'reviewer' { Get-Model 'reviewer' }
+            'planner'  { Get-Model $hostName 'planner' }
+            'builder'  { Get-Model $hostName 'builder' }
+            'reviewer' { Get-Model $hostName 'reviewer' }
             default    { '' }
         }
         if ($hostName -eq 'claude') {

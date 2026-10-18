@@ -1,15 +1,18 @@
 {
-  "planner": "",
-  "builder": "",
-  "reviewer": "",
-  "hosts": ["opencode", "claude"],
+  "hosts": ["claude"],
+  "models": {
+    "claude": { "planner": "", "builder": "", "reviewer": "" },
+    "codex":  { "planner": "", "builder": "", "reviewer": "" }
+  },
   "_readme": [
     "Copy this file to dev-deck.config.json (git-ignored).",
     "",
-    "Model slots:",
+    "models: one map per host. The installer reads models[<host>][<role>] for",
+    "  each host it writes role files for.",
     "  - leave \"\" to inherit the host's default model",
-    "  - opencode example: \"anthropic/claude-opus-4-5\" or \"openai/gpt-6.1-sol\"",
-    "  - Claude Code example: \"opus\" | \"sonnet\" | \"haiku\"",
+    "  - Claude Code: full model IDs, e.g. \"claude-opus-5-5\", \"claude-sonnet-5-5\",",
+    "    or the aliases \"opus\" | \"sonnet\" | \"haiku\"",
+    "  - codex: model names as the host expects them",
     "  - keep reviewer a DIFFERENT model family than builder",
     "",
     "hosts: which agent hosts the installer writes role files for.",
