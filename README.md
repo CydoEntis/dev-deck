@@ -188,6 +188,27 @@ installer fills it in from `dev-deck.config.json`, so no model is hard-coded in
 a shipped file. Each host gets its own copy: `~/.claude/agents/<role>.md` for
 Claude Code, and `~/.codex/agents/<role>.toml` for Codex.
 
+## Decks
+
+Dev Deck is the platform. You install one or both decks from it:
+
+- **developer** — for building software. The planner, builder and reviewer
+  roles, the `pipeline` and `init` skills, and the pinned workflow skills:
+  pstack, Matt Pocock's pack, ponytail, anti-slop, caveman, and roadmap. Roles
+  and Context Mode are developer-deck features.
+- **designer** — for designing apps. Two upstream skill sets:
+  - **Impeccable** (`pbakaus/impeccable`, Apache-2.0): `/impeccable`, with 24
+    commands for the design workflow. Start every new project with
+    `/impeccable init`, which writes `PRODUCT.md`. Commands include `critique`,
+    `audit`, `polish`, `distill`, `animate`, `bolder`, and `quieter`.
+  - **Intent** (`ghaida/intent`, CC0): 18 UX and design-strategy skills, such as
+    `/intent`, `/strategize`, `/journey`, `/wireframe`, `/evaluate`, and
+    `/specify`. Its 6 agent personas (Noor, Ember, Wren, Vigil, Rune, Sage) are
+    not installed yet.
+
+The two decks are separate, so a designer install does not write roles or
+register Context Mode. Install both with `"decks": ["developer", "designer"]`.
+
 ## Prerequisites
 
 - **Windows** with PowerShell 5.1 or newer (`install\install.ps1`), or
@@ -208,7 +229,7 @@ git clone https://github.com/CydoEntis/dev-deck C:\dev\dev-deck
 cd C:\dev\dev-deck
 ```
 
-**2. Create your config: choose your packs and models** (see [Configuration](#configuration))
+**2. Create your config: choose your decks and models** (see [Configuration](#configuration))
 
 ```powershell
 copy dev-deck.config.json.example dev-deck.config.json
@@ -221,8 +242,8 @@ notepad dev-deck.config.json
 .\install\install.ps1
 ```
 
-It pulls the pinned upstreams for your enabled packs into `cache/`, copies their
-skills into `~/.claude/skills`, and, when the `dev-deck` pack is enabled, writes
+It pulls the pinned upstreams for your enabled decks into `cache/`, copies their
+skills into `~/.claude/skills`, and, when the `developer` deck is enabled, writes
 the three role files for each host you enabled and registers Context Mode with
 Claude Code and Codex. It exits 0 on success and 1 if anything failed, with the
 reason printed. It is idempotent: run it again to refresh.
@@ -255,7 +276,7 @@ a Codex session uses the `codex` slots.
 
 ```json
 {
-  "packs": ["dev-deck"],
+  "decks": ["developer", "designer"],
   "hosts": ["claude", "codex"],
   "models": {
     "claude": { "planner": "<model>", "builder": "<model>", "reviewer": "<model>" },
@@ -264,12 +285,9 @@ a Codex session uses the `codex` slots.
 }
 ```
 
-- **`packs`** — which packs to install. `"dev-deck"` is the planner, builder and
-  reviewer roles, the `pipeline` and `init` skills, and the pinned workflow
-  skills. `"designer"` is for app design work and has no skills yet, so it
-  installs nothing for now. Use `["dev-deck"]`, `["designer"]`, or
-  `["dev-deck", "designer"]`. Each pin in `upstream.json` lists the packs that
-  install it.
+- **`decks`** — which decks to install. Use `["developer"]`, `["designer"]`, or
+  both. Each pin in `upstream.json` lists the decks that install it. See
+  [Decks](#decks).
 - **`hosts`** — which hosts to install for: `"claude"`, `"codex"`, or both.
   Only hosts listed here get role files or MCP registration.
 - **`models.<host>.<role>`** — the model each role uses on that host. Use the
@@ -327,8 +345,9 @@ roles cannot run as separate agents there.
 - **Change a role's behavior:** edit `agents/<role>.md`.
 - **Add a host:** add a writer for it in `install/install.ps1` and
   `install/install.py`, and a check in `install/doctor.ps1` and `install/doctor.py`.
-- **Add a pack:** make a folder `skills/<pack>/` with one folder per skill, and
-  list the pack name in the `packs` of each pin that belongs to it.
+- **Add a deck:** make a folder `skills/<deck>/` with one folder per skill, and
+  list the deck name in the `decks` of each pin that belongs to it. A deck can
+  also be only upstream pins, with no folder.
 
 ## FAQ
 
