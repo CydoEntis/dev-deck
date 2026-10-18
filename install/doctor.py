@@ -51,8 +51,8 @@ def main():
 
     cfg = load(cfg_path)
     hosts = cfg.get("hosts", [])
-    packs = cfg.get("packs", [])
-    dev_deck = "dev-deck" in packs
+    decks = cfg.get("decks", [])
+    dev_deck = "developer" in decks
     roles = {p.stem for p in (ROOT / "agents").glob("*.md")} if dev_deck else set()
 
     # Role files: no unfilled {{...}} placeholders.
@@ -71,9 +71,9 @@ def main():
            and not (d / "SKILL.md").exists()] if skill_root.is_dir() else []
     check("all skill dirs have SKILL.md", not bad)
 
-    # Pins marked required must be installed, if their pack is enabled.
+    # Pins marked required must be installed, if their deck is enabled.
     for pin in load(ROOT / "upstream.json")["pins"]:
-        if pin.get("required") and set(pin.get("packs", [])) & set(packs):
+        if pin.get("required") and set(pin.get("decks", [])) & set(decks):
             check(f"required skill '{pin['name']}' installed",
                   (skill_root / pin["name"] / "SKILL.md").exists())
 

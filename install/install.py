@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Dev Deck installer for macOS and Linux (install.sh runs this).
 
-Mirrors install.ps1: pulls the pinned upstreams for the enabled packs, copies
+Mirrors install.ps1: pulls the pinned upstreams for the enabled decks, copies
 their skills into ~/.claude/skills, writes role files for each enabled host,
 and registers Context Mode through the claude and codex CLIs. Idempotent.
 Personal skills win over upstream skills with the same name.
@@ -74,13 +74,13 @@ def main():
     cfg_path = ROOT / "dev-deck.config.json"
     if not cfg_path.exists():
         shutil.copy(ROOT / "dev-deck.config.json.example", cfg_path)
-        print(f"Created {cfg_path} from the example. Edit it (packs, hosts, models), then re-run.",
+        print(f"Created {cfg_path} from the example. Edit it (decks, hosts, models), then re-run.",
               file=sys.stderr)
         return 1
 
     cfg = load(cfg_path)
     hosts = cfg.get("hosts", [])
-    packs = cfg.get("packs", [])
+    decks = cfg.get("decks", [])
     models = cfg.get("models", {})
 
     def model_for(host, role):
@@ -92,8 +92,8 @@ def main():
     skill_names = {}  # skill dir name -> (pin name, directory)
     for pin in load(ROOT / "upstream.json")["pins"]:
         name = pin["name"]
-        if not set(pin.get("packs", [])) & set(packs):
-            print(f"skip    {name} (pack not enabled)")
+        if not set(pin.get("decks", [])) & set(decks):
+            print(f"skip    {name} (deck not enabled)")
             continue
         url, ref = pin.get("url", ""), pin.get("ref", "")
         if not url and not pin.get("localPath"):
@@ -136,13 +136,12 @@ def main():
     # --- install skills ------------------------------------------------------
     manifest_skills = {}
     personal_src = {}
-    for pack in packs:
-        pack_dir = ROOT / "skills" / pack
-        if not pack_dir.is_dir():
-            print(f"note    pack '{pack}' has no skills yet")
-            continue
-        for d in sorted(p for p in pack_dir.iterdir() if p.is_dir()):
-            manifest_skills[d.name] = pack
+    for deck in decks:
+        deck_dir = ROOT / "skills" / deck
+        if not deck_dir.is_dir():
+            continue  # a deck may be made only of upstream pins
+        for d in sorted(p for p in deck_dir.iterdir() if p.is_dir()):
+            manifest_skills[d.name] = deck
             personal_src[d.name] = d
     for name, (pin_name, _) in skill_names.items():
         if name not in personal_src:
@@ -173,7 +172,7 @@ def main():
     print(f"installed {installed} skill copies, skipped {skipped} personal conflict(s)")
 
     # --- role agent files ----------------------------------------------------
-    templates = sorted((ROOT / "agents").glob("*.md")) if "dev-deck" in packs else []
+    templates = sorted((ROOT / "agents").glob("*.md")) if "developer" in decks else []
     agents = {}
     for host in hosts:
         if host == "claude":
@@ -196,7 +195,7 @@ def main():
         print(f"agents  wrote {len(templates)} {host} role files -> {agent_dir}")
 
     # --- MCP registration (claude, codex) -------------------------------------
-    if "dev-deck" in packs:
+    if "developer" in decks:
         servers = load(ROOT / "mcp" / "context-mode.json")["servers"]
         for host in ("claude", "codex"):
             if host not in hosts:
@@ -223,7 +222,7 @@ def main():
     manifest = {
         "installedAt": datetime.datetime.now().isoformat(),
         "hosts": hosts,
-        "packs": packs,
+        "decks": decks,
         "skills": manifest_skills,
         "agents": agents,
     }

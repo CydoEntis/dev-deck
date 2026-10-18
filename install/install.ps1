@@ -39,7 +39,7 @@ if (-not (Test-Path $CfgPath)) {
 }
 $Cfg = Read-Json $CfgPath
 $Hosts = @($Cfg.hosts)
-$Packs = @($Cfg.packs)
+$Decks = @($Cfg.decks)
 function Get-Model([string]$HostName, [string]$Role) {
     $v = $Cfg.models.$HostName.$Role
     if ($null -eq $v -or $v -eq '') { return '' }
@@ -54,8 +54,8 @@ $Manifest = @{ skills = @{}; agents = @{}; mcp = @{}; installedAt = (Get-Date).T
 $SkillNames = @{}
 
 foreach ($Pin in $Up.pins) {
-    if (-not (@($Pin.packs) | Where-Object { $Packs -contains $_ })) {
-        Write-Host "skip    $($Pin.name) (pack not enabled)" -ForegroundColor DarkGray
+    if (-not (@($Pin.decks) | Where-Object { $Decks -contains $_ })) {
+        Write-Host "skip    $($Pin.name) (deck not enabled)" -ForegroundColor DarkGray
         continue
     }
     if (-not $Pin.url -and -not $Pin.localPath) {
@@ -96,14 +96,14 @@ foreach ($Pin in $Up.pins) {
 }
 
 # --- install skills -------------------------------------------------------
-# Personal skills ship from the repo, one folder per pack: skills/<pack>/<name>.
+# Personal skills ship from the repo, one folder per deck: skills/<deck>/<name>.
 $ManifestSkills = @{}
 $PersonalSrc = @{}
-foreach ($Pack in $Packs) {
-    $PackDir = Join-Path $Root "skills/$Pack"
-    if (-not (Test-Path $PackDir)) { Write-Host "note    pack '$Pack' has no skills yet" -ForegroundColor DarkGray; continue }
-    Get-ChildItem -Path $PackDir -Directory | ForEach-Object {
-        $ManifestSkills[$_.Name] = $Pack
+foreach ($Deck in $Decks) {
+    $DeckDir = Join-Path $Root "skills/$Deck"
+    if (-not (Test-Path $DeckDir)) { continue }  # a deck may be made only of upstream pins
+    Get-ChildItem -Path $DeckDir -Directory | ForEach-Object {
+        $ManifestSkills[$_.Name] = $Deck
         $PersonalSrc[$_.Name] = $_.FullName
     }
 }
@@ -171,9 +171,9 @@ function ConvertTo-CodexAgent([string]$Raw, [string]$Role, [string]$Model) {
     return (($Lines -join "`n") + "`n")
 }
 
-# Role files belong to the dev-deck pack only.
+# Role files belong to the dev-deck deck only.
 $AgentTemplates = @()
-if ($Packs -contains 'dev-deck') { $AgentTemplates = @(Get-ChildItem (Join-Path $Root 'agents') -Filter '*.md' -File) }
+if ($Decks -contains 'developer') { $AgentTemplates = @(Get-ChildItem (Join-Path $Root 'agents') -Filter '*.md' -File) }
 foreach ($hostName in $Hosts) {
     $AgentDir = switch ($hostName) {
         'claude'   { Join-Path $HOME '.claude/agents' }
@@ -214,7 +214,7 @@ function Invoke-Quiet([string]$Exe, [string[]]$CmdArgs) {
 }
 
 foreach ($hostName in @('claude', 'codex')) {
-    if ($Hosts -notcontains $hostName -or $Packs -notcontains 'dev-deck') { continue }
+    if ($Hosts -notcontains $hostName -or $Decks -notcontains 'developer') { continue }
     if (-not (Get-Command $hostName -ErrorAction SilentlyContinue)) {
         $Issues += "$hostName CLI not found - MCP not registered for $hostName"
         continue
