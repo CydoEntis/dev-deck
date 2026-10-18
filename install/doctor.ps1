@@ -30,7 +30,6 @@ if (-not (Test-Path $Cfg)) {
 $Roles = (Get-ChildItem (Join-Path $Root 'agents') -Filter '*.md' -File).BaseName
 $AgentDirs = @(
     (Join-Path $HOME '.claude/agents'),
-    (Join-Path $HOME '.config/opencode/agents'),
     (Join-Path $HOME '.codex/agents')
 )
 foreach ($Dir in $AgentDirs) {

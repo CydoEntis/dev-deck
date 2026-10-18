@@ -1,5 +1,5 @@
 {
-  "hosts": ["claude", "codex", "pi", "opencode", "deepseek"],
+  "hosts": ["claude", "codex"],
   "models": {
     "claude": { "planner": "", "builder": "", "reviewer": "" },
     "codex":  { "planner": "", "builder": "", "reviewer": "" }
@@ -16,9 +16,8 @@
     "  - keep reviewer a DIFFERENT model family than builder",
     "",
     "hosts: which agent hosts the installer writes role files for.",
-    "  allowed: opencode, claude, codex, pi, deepseek",
-    "  opencode -> ~/.config/opencode/agent/<role>.md",
+    "  allowed: claude, codex",
     "  claude   -> ~/.claude/agents/<role>.md",
-    "  others   -> roles stay in the repo as instruction files (see README)"
+    "  codex    -> ~/.codex/agents/<role>.toml"
   ]
 }

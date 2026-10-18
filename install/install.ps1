@@ -7,8 +7,6 @@
 param([string]$Root = (Split-Path -Parent $PSScriptRoot))
 
 $ErrorActionPreference = 'Stop'
-# Skill dirs by host. pi reads ~/.agents/skills (pi docs/skills.md). codex,
-# opencode and deepseek have no skill dir verified here, so they get none yet.
 $SkillTargets = @((Join-Path $HOME '.claude/skills'))
 $Issues = @()
 
@@ -41,7 +39,6 @@ if (-not (Test-Path $CfgPath)) {
 }
 $Cfg = Read-Json $CfgPath
 $Hosts = @($Cfg.hosts)
-if ($Hosts -contains 'pi') { $SkillTargets += (Join-Path $HOME '.agents/skills') }
 function Get-Model([string]$HostName, [string]$Role) {
     $v = $Cfg.models.$HostName.$Role
     if ($null -eq $v -or $v -eq '') { return '' }
@@ -137,16 +134,13 @@ foreach ($Name in $ManifestSkills.Keys) {
 Write-Host "installed $Installed skill copies, skipped $Skipped personal conflict(s)"
 
 # --- role agent files -----------------------------------------------------
-# Each host gets roles in its own format. pi and deepseek have no subagent
-# format here, so they get skills only.
+# Each host gets roles in its own format: Claude Code as markdown, Codex as TOML.
 function Write-Utf8([string]$Path, [string]$Text) {
     [IO.File]::WriteAllText($Path, $Text, (New-Object System.Text.UTF8Encoding $false))
 }
 
 function ConvertTo-MarkdownAgent([string]$Raw, [string]$Model, [string]$HostName) {
     $Content = $Raw
-    # opencode names the agent after its file; extra keys go to the provider as options.
-    if ($HostName -eq 'opencode') { $Content = $Content -replace '(?m)^name:.*\r?\n', '' }
     if ($Model) { return $Content -replace '\{\{\w+\}\}', $Model }
     if ($HostName -eq 'claude') { return $Content -replace '\{\{\w+\}\}', 'inherit' }
     return $Content -replace '(?m)^model:\s*\{\{\w+\}\}\s*\r?\n', ''
@@ -169,7 +163,6 @@ $AgentTemplates = Get-ChildItem (Join-Path $Root 'agents') -Filter '*.md' -File
 foreach ($hostName in $Hosts) {
     $AgentDir = switch ($hostName) {
         'claude'   { Join-Path $HOME '.claude/agents' }
-        'opencode' { Join-Path $HOME '.config/opencode/agents' }
         'codex'    { Join-Path $HOME '.codex/agents' }
         default    { $null }
     }
@@ -195,35 +188,9 @@ foreach ($hostName in $Hosts) {
     Write-Host "agents  wrote $($AgentTemplates.Count) $hostName role files -> $AgentDir"
 }
 
-# --- MCP registration (opencode) ------------------------------------------
+# --- MCP registration (claude, codex) --------------------------------------
 $McpFile = Join-Path $Root 'mcp/context-mode.json'
 $Mcp = Read-Json $McpFile
-if ($Hosts -contains 'opencode') {
-    $Ocfg = Join-Path $HOME '.config/opencode/opencode.json'
-    if (Test-Path $Ocfg) {
-        $Backup = "$Ocfg.bak-$(Get-Date -Format yyyyMMdd-HHmmss)"
-        Copy-Item $Ocfg $Backup
-        $Oj = Read-Json $Ocfg
-        if (-not ($Oj.PSObject.Properties.Name -contains 'mcp')) {
-            $Oj | Add-Member -NotePropertyName mcp -NotePropertyValue ([PSCustomObject]@{})
-        }
-        foreach ($S in $Mcp.servers.PSObject.Properties) {
-            $CmdText = "$($S.Value.command)"
-            if ($CmdText -match 'REPLACE-WITH') {
-                Write-Host "warn    MCP '$($S.Name)' has a placeholder command - not registered. Edit mcp/context-mode.json, re-run." -ForegroundColor Yellow
-                continue
-            }
-            $Oj.mcp | Add-Member -NotePropertyName $S.Name -NotePropertyValue $S.Value -Force
-            $Manifest.mcp[$S.Name] = $Ocfg
-        }
-        $Oj | ConvertTo-Json -Depth 12 | Set-Content $Ocfg
-        Write-Host "mcp     merged $($Mcp.servers.PSObject.Properties.Count) server(s) into $Ocfg (backup: $Backup)"
-    } else {
-        $Issues += "opencode config not found at $Ocfg - MCP not registered"
-    }
-}
-
-# --- MCP registration (claude, codex) --------------------------------------
 # Both hosts are configured through their own CLIs, so the installer calls
 # those instead of editing their config files. Remove first so re-runs refresh.
 function Invoke-Quiet([string]$Exe, [string[]]$CmdArgs) {
