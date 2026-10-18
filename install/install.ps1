@@ -7,6 +7,8 @@
 param([string]$Root = (Split-Path -Parent $PSScriptRoot))
 
 $ErrorActionPreference = 'Stop'
+# Skill dirs by host. pi reads ~/.agents/skills (pi docs/skills.md). codex,
+# opencode and deepseek have no skill dir verified here, so they get none yet.
 $SkillTargets = @((Join-Path $HOME '.claude/skills'))
 $Issues = @()
 
@@ -39,6 +41,7 @@ if (-not (Test-Path $CfgPath)) {
 }
 $Cfg = Read-Json $CfgPath
 $Hosts = @($Cfg.hosts)
+if ($Hosts -contains 'pi') { $SkillTargets += (Join-Path $HOME '.agents/skills') }
 function Get-Model([string]$HostName, [string]$Role) {
     $v = $Cfg.models.$HostName.$Role
     if ($null -eq $v -or $v -eq '') { return '' }
@@ -113,10 +116,17 @@ foreach ($Name in $ManifestSkills.Keys) {
         $Dst = Join-Path $Target $Name
         $Marker = Join-Path $Dst '.devdeck'
         if ((Test-Path $Dst) -and (-not (Test-Path $Marker))) {
-            # exists but not installed by us (no marker) -> personal or link: leave alone
-            Write-Host "skip    '$Name' already present without dev-deck marker - personal wins" -ForegroundColor Yellow
-            $Skipped++
-            continue
+            $IsLink = [bool]((Get-Item $Dst -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)
+            if ($IsLink -and $ManifestSkills[$Name] -ne 'dev-deck') {
+                # Link from an earlier manual setup, now owned by a pinned upstream.
+                # rmdir removes the link only, never what it points at.
+                cmd /c rmdir "$Dst" | Out-Null
+            } else {
+                # personal skill or unmanaged link: leave alone
+                Write-Host "skip    '$Name' already present without dev-deck marker - personal wins" -ForegroundColor Yellow
+                $Skipped++
+                continue
+            }
         }
         if (Test-Path $Dst) { Remove-Item $Dst -Recurse -Force }   # ours (marker) or link: refresh
         Copy-Item $SrcDir $Dst -Recurse -Force
@@ -127,38 +137,62 @@ foreach ($Name in $ManifestSkills.Keys) {
 Write-Host "installed $Installed skill copies, skipped $Skipped personal conflict(s)"
 
 # --- role agent files -----------------------------------------------------
+# Each host gets roles in its own format. pi and deepseek have no subagent
+# format here, so they get skills only.
+function Write-Utf8([string]$Path, [string]$Text) {
+    [IO.File]::WriteAllText($Path, $Text, (New-Object System.Text.UTF8Encoding $false))
+}
+
+function ConvertTo-MarkdownAgent([string]$Raw, [string]$Model, [string]$HostName) {
+    $Content = $Raw
+    # opencode names the agent after its file; extra keys go to the provider as options.
+    if ($HostName -eq 'opencode') { $Content = $Content -replace '(?m)^name:.*\r?\n', '' }
+    if ($Model) { return $Content -replace '\{\{\w+\}\}', $Model }
+    if ($HostName -eq 'claude') { return $Content -replace '\{\{\w+\}\}', 'inherit' }
+    return $Content -replace '(?m)^model:\s*\{\{\w+\}\}\s*\r?\n', ''
+}
+
+function ConvertTo-CodexAgent([string]$Raw, [string]$Role, [string]$Model) {
+    if ($Raw -notmatch '(?s)\A---\r?\n(.*?)\r?\n---\r?\n(.*)\z') { throw "role '$Role' has no frontmatter" }
+    $Front = $Matches[1]
+    $Body = $Matches[2].TrimEnd()
+    if ($Body -match "'''") { throw "role '$Role' body contains ''' (breaks the TOML literal string)" }
+    $Desc = ([regex]::Match($Front, '(?m)^description:\s*(.+?)\s*$')).Groups[1].Value
+    $Desc = $Desc -replace '\\', '\\' -replace '"', '\"'
+    $Lines = @("name = `"$Role`"", "description = `"$Desc`"")
+    if ($Model) { $Lines += "model = `"$Model`"" }
+    $Lines += "developer_instructions = '''", $Body, "'''"
+    return (($Lines -join "`n") + "`n")
+}
+
 $AgentTemplates = Get-ChildItem (Join-Path $Root 'agents') -Filter '*.md' -File
 foreach ($hostName in $Hosts) {
     $AgentDir = switch ($hostName) {
-        'opencode' { Join-Path $HOME '.config/opencode/agent' }
         'claude'   { Join-Path $HOME '.claude/agents' }
+        'opencode' { Join-Path $HOME '.config/opencode/agents' }
+        'codex'    { Join-Path $HOME '.codex/agents' }
         default    { $null }
     }
     if ($null -eq $AgentDir) {
-        Write-Host "note    host '$hostName': roles stay as instruction files in the repo" -ForegroundColor DarkGray
+        Write-Host "note    host '$hostName': no subagent format; skills only" -ForegroundColor DarkGray
         continue
     }
     New-Item -ItemType Directory -Force -Path $AgentDir | Out-Null
     foreach ($Tpl in $AgentTemplates) {
-        $Content = Get-Content $Tpl.FullName -Raw
         $Role = $Tpl.BaseName
-        $Model = switch ($Role) {
-            'planner'  { Get-Model $hostName 'planner' }
-            'builder'  { Get-Model $hostName 'builder' }
-            'reviewer' { Get-Model $hostName 'reviewer' }
-            default    { '' }
-        }
-        if ($hostName -eq 'claude') {
-            if ($Model -eq '') { $Model = 'inherit' }
-            $Content = $Content -replace '\{\{\w+\}\}', $Model
+        $Raw = Get-Content $Tpl.FullName -Raw -Encoding UTF8
+        $Model = Get-Model $hostName $Role
+        if ($hostName -eq 'codex') {
+            $File = Join-Path $AgentDir "$Role.toml"
+            $Content = ConvertTo-CodexAgent $Raw $Role $Model
         } else {
-            if ($Model -eq '') { $Content = $Content -replace '(?m)^model:\s*\{\{\w+\}\}\s*$', '' }
-            else { $Content = $Content -replace '\{\{\w+\}\}', $Model }
+            $File = Join-Path $AgentDir "$Role.md"
+            $Content = ConvertTo-MarkdownAgent $Raw $Model $hostName
         }
-        Set-Content -Path (Join-Path $AgentDir "$Role.md") -Value $Content -NoNewline
-        $Manifest.agents[$Role] = $AgentDir
+        Write-Utf8 $File $Content
+        $Manifest.agents["$hostName/$Role"] = $AgentDir
     }
-    Write-Host "agents  wrote $($AgentTemplates.Count) role files -> $AgentDir"
+    Write-Host "agents  wrote $($AgentTemplates.Count) $hostName role files -> $AgentDir"
 }
 
 # --- MCP registration (opencode) ------------------------------------------

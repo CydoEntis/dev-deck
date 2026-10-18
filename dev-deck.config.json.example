@@ -1,5 +1,5 @@
 {
-  "hosts": ["claude"],
+  "hosts": ["claude", "codex", "pi", "opencode", "deepseek"],
   "models": {
     "claude": { "planner": "", "builder": "", "reviewer": "" },
     "codex":  { "planner": "", "builder": "", "reviewer": "" }
