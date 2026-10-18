@@ -223,6 +223,36 @@ if ($Hosts -contains 'opencode') {
     }
 }
 
+# --- MCP registration (claude, codex) --------------------------------------
+# Both hosts are configured through their own CLIs, so the installer calls
+# those instead of editing their config files. Remove first so re-runs refresh.
+function Invoke-Quiet([string]$Exe, [string[]]$CmdArgs) {
+    $ErrorActionPreference = 'Continue'
+    & $Exe @CmdArgs *>$null
+    return $LASTEXITCODE
+}
+
+foreach ($hostName in @('claude', 'codex')) {
+    if ($Hosts -notcontains $hostName) { continue }
+    if (-not (Get-Command $hostName -ErrorAction SilentlyContinue)) {
+        $Issues += "$hostName CLI not found - MCP not registered for $hostName"
+        continue
+    }
+    foreach ($S in $Mcp.servers.PSObject.Properties) {
+        $Cmd = @($S.Value.command)
+        if (($Cmd -join ' ') -match 'REPLACE-WITH') { continue }
+        if ($hostName -eq 'claude') {
+            Invoke-Quiet 'claude' @('mcp', 'remove', '--scope', 'user', $S.Name) | Out-Null
+            $Code = Invoke-Quiet 'claude' (@('mcp', 'add', '--scope', 'user', $S.Name, '--') + $Cmd)
+        } else {
+            Invoke-Quiet 'codex' @('mcp', 'remove', $S.Name) | Out-Null
+            $Code = Invoke-Quiet 'codex' (@('mcp', 'add', $S.Name, '--') + $Cmd)
+        }
+        if ($Code -ne 0) { $Issues += "mcp add failed in ${hostName}: $($S.Name)" }
+        else { Write-Host "mcp     $hostName registered $($S.Name)" }
+    }
+}
+
 # --- manifest -------------------------------------------------------------
 $Manifest.skills = $ManifestSkills
 $Manifest | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $Root 'installed.json')

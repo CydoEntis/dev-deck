@@ -53,6 +53,15 @@ foreach ($Pin in ($Up.pins | Where-Object { $_.required })) {
     Check "required skill '$($Pin.name)' installed" { Test-Path (Join-Path $SkillRoot "$($Pin.name)/SKILL.md") }
 }
 
+# Context Mode must be registered in each enabled host that takes MCP servers.
+$Enabled = @((Get-Content $Cfg -Raw | ConvertFrom-Json).hosts)
+if ($Enabled -contains 'claude') {
+    Check "context-mode registered in claude" { cmd /c "claude mcp get context-mode >nul 2>&1"; $LASTEXITCODE -eq 0 }
+}
+if ($Enabled -contains 'codex') {
+    Check "context-mode registered in codex" { (cmd /c "codex mcp list 2>nul") -match 'context-mode' }
+}
+
 Write-Host ""
 if ($Fails -eq 0) {
     Write-Host "All checks passed." -ForegroundColor Green
