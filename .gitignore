@@ -1,4 +1,5 @@
 dev-deck.config.json
+installed.json
 cache/
 retired/
 __pycache__/
