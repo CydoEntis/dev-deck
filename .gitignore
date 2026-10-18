@@ -2,6 +2,7 @@ dev-deck.config.json
 installed.json
 cache/
 retired/
+worktrees/
 __pycache__/
 *.pyc
 .DS_Store
