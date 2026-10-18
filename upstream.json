@@ -31,10 +31,10 @@
     },
     {
       "name": "caveman",
-      "url": "",
-      "ref": "",
+      "url": "https://github.com/juliusbrussee/caveman",
+      "ref": "main",
       "skillsPath": "skills",
-      "note": "Decluttered-output skill. Fill in url/ref when available; installer skips pins with an empty url and no localPath."
+      "note": "Decluttered-output skill (caveman, caveman-commit, caveman-compress, ...)."
     },
     {
       "name": "roadmap",
