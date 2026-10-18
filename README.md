@@ -9,9 +9,9 @@
 
 Dev Deck is a set of role definitions, build conventions, and an installer that
 wrap third-party agent skills. It pins the workflow skills to maintained
-upstream packs (pstack, Matt Pocock's pack, Ponytail, antislop, caveman) and
-adds three things you control: three role definitions, your build conventions,
-and a cross-stack API contract.
+upstream packs (pstack, Matt Pocock's pack, Ponytail, anti-slop, caveman, and
+your own roadmap skill) and adds three things you control: three role
+definitions, your build conventions, and a cross-stack API contract.
 
 The pipeline has three roles:
 
@@ -23,13 +23,12 @@ The pipeline has three roles:
 
 ## Maintenance model
 
-You maintain roughly 200 lines of your own content. Everything else is pinned
-upstream and refreshed by re-running the installer.
+You maintain the role files and conventions. Everything else is pinned upstream
+and refreshed by re-running the installer.
 
 | Maintained by you | Pinned upstream (do not edit) |
 |---|---|
-| 3 role files (`agents/`) | pstack, Matt Pocock, Ponytail, antislop, caveman |
-| 3 convention files (`conventions/`) | roadmap |
+| 3 role files (`agents/`), 3 convention files (`conventions/`) | pstack, Matt Pocock, Ponytail, anti-slop, caveman, roadmap |
 
 Your conventions live in `conventions/`. Each project gets a short `AGENTS.md`
 that points at them. To update an upstream, change its pin in `upstream.json`
@@ -40,7 +39,7 @@ requires rewriting a skill.
 
 ```
 Task: "add feature X"   (in a repo whose AGENTS.md references Dev Deck)
-└─ Main session (any model; the host loads the roles and skills)
+└─ Main session (Claude Code or Codex; it loads that host's roles and skills)
    └─ pipeline skill  (orchestrates the three roles; not run by hand)
         ├─ PLANNER   — your strongest model
         │     new session · uses: roadmap, wayfinder/to-spec/to-tickets,
@@ -81,7 +80,8 @@ part of the automated loop; you invoke those skills directly when needed.
 - **Approach:** start from the unknowns, not the idea. Learn the existing
   code, gather the answers the request is missing, then refine the idea into a
   spec and thin, independent tickets. For large or ambiguous work, resolve the
-  major decisions before writing the spec.
+  major decisions before writing the spec. Research happens here, as the
+  planner's first step, before it plans.
 - **Skills:** Matt `research → to-questionnaire`, `grill-with-docs → to-spec →
   to-tickets`, `wayfinder → to-spec`; pstack `how → why → teach` (read the
   code), `figure-it-out → show-me-your-work` (large or unattended work);
@@ -116,17 +116,16 @@ part of the automated loop; you invoke those skills directly when needed.
 
 ### Stage 4 — Test
 
-- **Role:** reviewer (different model family, isolated — it never saw the
-  builder's session).
+- **Role:** reviewer (isolated — it never saw the builder's session).
 - **Approach:** verify the change on the running application, not only in
   unit tests. Identify what the change could break, check performance numbers,
   review the diff from multiple angles, and remove anything that can be
   removed.
 - **Skills:** pstack `create-verification-skill → swarm`, `blast-radius →
   benchmark-checklist`, `interrogate → thermo-nuclear-code-quality-review`;
-  Matt `code-review`; `ponytail-review` / `ponytail-audit`; `caveman` +
-  keeps the output concise. (`antislop` is a code lint, not a writing tool:
-  the `install-anti-slop` skill adds Oxlint rules to a repo that asks for them.)
+  Matt `code-review`; `ponytail-review` / `ponytail-audit`; `caveman` keeps the
+  output concise. (`anti-slop` is an Oxlint code lint, not a writing tool: its
+  `install-anti-slop` skill adds the rules to a repo that asks for them.)
 - **Gap it fills:** Matt's pack has no separate QA/e2e/browser-testing skill —
   testing happens in Build. pstack's verification and swarm skills cover it.
 
@@ -153,7 +152,7 @@ part of the automated loop; you invoke those skills directly when needed.
 ### Utility skills (not tied to a stage)
 
 - **Router:** Matt `ask-matt` and pstack's router — "which skill do I need?"
-- **Set up once:** Matt `setup-mattpocock-skills`; Dev Deck `init` per project.
+- **Set up once:** Matt `setup-matt-pocock-skills`; Dev Deck `init` per project.
 - **Interview and re-explain:** `grilling`, `grill-me`, `wait-what`.
 - **Learn and write:** `teach`, `writing-for-agents`.
 
@@ -180,40 +179,63 @@ installed but do not run automatically.
 
 | Role | Model slot | Uses | Produces |
 |---|---|---|---|
-| **Planner** | strongest (`{{PLANNER}}`) | roadmap, Matt planning, pstack learn/plan | plan + tickets under `.plan/` |
-| **Builder** | low-cost (`{{BUILDER}}`) | Matt implement, pstack build/clean, ponytail | commits on the branch |
-| **Reviewer** | different-family strong (`{{REVIEWER}}`), isolated | Matt code-review, pstack test, ponytail-review, caveman | PASS / FAIL + findings |
+| **Planner** | strongest | roadmap, Matt planning, pstack learn/plan | plan + tickets under `.plan/` |
+| **Builder** | low-cost | Matt implement, pstack build/clean, ponytail | commits on the branch |
+| **Reviewer** | strong, different family from the builder | Matt code-review, pstack test, ponytail-review, caveman | PASS / FAIL + findings |
 
-Each role is a small markdown file. The `model:` frontmatter is a placeholder
-the installer fills from your config, so no model is hard-coded in a shipped
-file.
+Each role is a small file in `agents/`. The model is not in that file: the
+installer fills it in from `dev-deck.config.json`, so no model is hard-coded in
+a shipped file. Each host gets its own copy: `~/.claude/agents/<role>.md` for
+Claude Code, and `~/.codex/agents/<role>.toml` for Codex.
+
+## Prerequisites
+
+- **Windows** with PowerShell 5.1 or newer. The installer is `install\install.ps1`.
+  macOS and Linux are not supported yet (see [Platforms](#platforms)).
+- **git**, on PATH.
+- **Node.js**, on PATH. Context Mode runs through `npx`.
+- **Claude Code CLI** (`claude`) and/or **Codex CLI** (`codex`), on PATH, for the
+  hosts you enable. The installer registers Context Mode through these CLIs and
+  reports an issue if one is missing.
 
 ## Quickstart
 
-**Install (Windows):**
+**1. Clone the repo**
+
 ```powershell
-git clone <this repo> C:\dev\dev-deck
+git clone https://github.com/CydoEntis/dev-deck C:\dev\dev-deck
 cd C:\dev\dev-deck
+```
+
+**2. Create your config and set your models** (see [Configuration](#configuration))
+
+```powershell
 copy dev-deck.config.json.example dev-deck.config.json
-# edit dev-deck.config.json: set your model slots and hosts
+notepad dev-deck.config.json
+```
+
+**3. Run the installer**
+
+```powershell
 .\install\install.ps1
 ```
 
-**Install (macOS / Linux):**
-```bash
-git clone <this repo> ~/dev-deck
-cd ~/dev-deck
-cp dev-deck.config.json.example dev-deck.config.json
-# edit dev-deck.config.json
-./install/install.sh
+It pulls the pinned upstreams into `cache/`, copies their skills into
+`~/.claude/skills`, writes the three role files for each
+host you enabled, writes the `pipeline` and `init` skills, and registers Context
+Mode with Claude Code and Codex. It exits 0 on success and 1 if anything failed,
+with the reason printed. It is idempotent: run it again to refresh.
+
+**4. Verify**
+
+```powershell
+.\install\doctor.ps1
 ```
 
-The installer pulls the pinned upstreams, copies their skills into your host's
-global skill directory, writes the three role files (models substituted),
-writes the `pipeline` and `init` skills, and registers the Context Mode MCP
-server with Claude Code and Codex (through their own `mcp` CLIs) and with
-OpenCode (in its `opencode.json`). It is idempotent — run it again at any time
-to refresh.
+The doctor checks that the config exists, no role file still has an unfilled
+`{{...}}` model placeholder, every installed skill has a `SKILL.md`, the
+required `roadmap` skill is installed, and Context Mode is registered in each
+enabled host. It exits 0 only when all of those pass.
 
 **Set up a project:** in any repo, invoke the **init** skill. It reads your
 manifests, drafts a short `AGENTS.md` (your stack, a pointer to the house
@@ -221,44 +243,86 @@ style, the commit format, and a pipeline note), and writes it without
 overwriting anything that is already there.
 
 **Run the pipeline:** in a configured repo, invoke the **pipeline** skill on a
-feature. It runs planner → builder → reviewer and returns the verdict.
+feature. It runs planner → builder → reviewer and returns the verdict. Run it
+from the host you want: a Claude Code session uses the `claude` model slots, and
+a Codex session uses the `codex` slots.
+
+## Configuration
+
+`dev-deck.config.json` is git-ignored and lives in the repo root. Start from
+`dev-deck.config.json.example`. It has two keys:
+
+```json
+{
+  "hosts": ["claude", "codex"],
+  "models": {
+    "claude": { "planner": "<model>", "builder": "<model>", "reviewer": "<model>" },
+    "codex":  { "planner": "<model>", "builder": "<model>", "reviewer": "<model>" }
+  }
+}
+```
+
+- **`hosts`** — which hosts to install for: `"claude"`, `"codex"`, or both.
+  Only hosts listed here get role files or MCP registration.
+- **`models.<host>.<role>`** — the model each role uses on that host. Use the
+  exact model ID that host accepts. Claude Code also accepts the aliases
+  `opus`, `sonnet`, and `haiku`. Leave a value empty (`""`) to inherit that
+  host's default model.
+
+Example for a Claude Code user: set the planner and reviewer to your strongest
+Claude model and the builder to a cheaper one. Use model IDs your host accepts;
+the installer does not check them.
+
+**Keep the reviewer in a different model family from the builder.** That is the
+point of the isolated reviewer. If `builder` and `reviewer` are both Claude
+models, the reviewer is only a second opinion from the same family. Setting
+`reviewer` to a Codex model on the `codex` host is the cross-family option.
+
+After editing the config, run `.\install\install.ps1` again, then check the role
+file, for example `Select-String "^model:" $HOME\.claude\agents\planner.md`.
 
 ## Updating
 
 - **Refresh an upstream:** change its pin in `upstream.json`, then re-run
-  install.
-- **Verify:** run `install\doctor.ps1` (or `install/doctor.sh`) — it checks
-  that pins are current, there are no skill-name collisions, the roles are in
-  place, and the MCP server is reachable.
+  `.\install\install.ps1`.
+- **Change a model:** edit `dev-deck.config.json`, then re-run the installer.
+- **Verify:** run `.\install\doctor.ps1`.
 
-## Swapping hosts or machines
+## Platforms
 
-Edit `dev-deck.config.json` (model slots and `hosts` list) and re-run install.
-The roles and conventions are host-agnostic markdown; the installer maps them
-onto the hosts you enable. On a new machine, clone the repo, fill in the
-config, and run `install.sh` or `install.ps1`.
+- **Windows (PowerShell):** supported. `install\install.ps1` and
+  `install\doctor.ps1` are the tested path.
+- **macOS and Linux:** not supported yet. `install/install.sh` and
+  `install/doctor.sh` predate the per-host changes and have not been run. Do
+  not rely on them until they are updated.
 
-Supported hosts: **Claude Code, Codex, OpenCode, Pi, DeepSeek harness.** Claude
-Code, Codex and OpenCode get the three roles as native subagents (Claude Code
-`~/.claude/agents`, Codex `~/.codex/agents` as TOML, OpenCode
-`~/.config/opencode/agents`). Pi and DeepSeek get the skills only: pi has no
-subagents, so the three roles do not run as separate agents there.
+## Hosts
+
+Supported hosts: **Claude Code and Codex.** Both get the three roles as native
+subagents: Claude Code from `~/.claude/agents` as markdown, Codex from
+`~/.codex/agents` as TOML. Both also get Context Mode registered as an MCP
+server.
+
+Pi, OpenCode and DeepSeek are not supported. Pi has no subagents, so the three
+roles cannot run as separate agents there.
 
 ## Contributing
 
 - **Add a convention:** add a file in `conventions/`. Reference it from
   `agents/reviewer.md` and `conventions/code-style.md` so it is enforced.
 - **Add an upstream pin:** add a row to `upstream.json` (name, url, ref,
-  skillsPath). Re-run install.
+  skillsPath). Re-run the installer. Set `"required": true` to make the doctor
+  fail when the skill is missing.
 - **Change a role's behavior:** edit `agents/<role>.md`.
-- **Add a host:** add a mapping in `install.ps1` / `install.sh`.
+- **Add a host:** add a writer for it in `install/install.ps1`, and a check in
+  `install/doctor.ps1`.
 
 ## FAQ
 
 - **Why does the reviewer see nothing from the builder?** A model that
   reported the change as working is biased toward agreeing with itself. The
-  reviewer is a fresh, different-family model handed only the diff, the plan
-  entry, and the repo's rules. It must verify the claim from evidence.
+  reviewer is a fresh model handed only the diff, the plan entry, and the
+  repo's rules. It must verify the claim from evidence.
 - **Why are models in `dev-deck.config.json` and not in the role files?** So
   no model is hard-coded in a shipped file. Anyone can point a role at any
   available model, or leave it blank to inherit the host's default.
@@ -271,13 +335,8 @@ subagents, so the three roles do not run as separate agents there.
   global file holds your taste, and the local file holds the project's actual
   setup.
 - **Does each repo get a config file?** No. Projects get only their
-  `AGENTS.md`. Model overrides live in the single `dev-deck.config.json`, or in
-  an optional per-project `.dev-deck.json` for one repo on a stronger model.
+  `AGENTS.md`. All model settings live in the one `dev-deck.config.json`.
 
 ## License
 
 MIT.
-
-<sub>The cross-stack contract (`conventions/contract.md`) and the isolated
-reviewer pattern (`agents/reviewer.md`) are adapted from a private work
-playbook. Company-specific content was removed.</sub>
