@@ -201,10 +201,16 @@ Dev Deck is the platform. You install one or both decks from it:
     commands for the design workflow. Start every new project with
     `/impeccable init`, which writes `PRODUCT.md`. Commands include `critique`,
     `audit`, `polish`, `distill`, `animate`, `bolder`, and `quieter`.
-  - **Intent** (`ghaida/intent`, CC0): 18 UX and design-strategy skills, such as
-    `/intent`, `/strategize`, `/journey`, `/wireframe`, `/evaluate`, and
-    `/specify`. Its 6 agent personas (Noor, Ember, Wren, Vigil, Rune, Sage) are
-    not installed yet.
+  - **Intent** (`ghaida/intent`, CC0), picked: `/evaluate` (heuristic review),
+    `/wireframe`, `/articulate` (UI copy), `/include` (accessibility), and
+    `/fortify` (edge cases and error states). The rest of Intent is left out.
+    Some of these point at skills that are not installed, such as `/journey` and
+    `/organize`. They still work, but the cross-references do not resolve.
+  - **Emil Kowalski's skills** (`emilkowalski/skills`, MIT), picked: motion and
+    polish. `emil-design-eng`, `animate`, `animation-performance`,
+    `review-animations`, `break-ui` (stress-test with worst-case data),
+    `mobile-native`, `apple-design`, and `animation-vocabulary`. `prototype` is
+    left out because the developer deck already has one.
 
 The two decks are separate, so a designer install does not write roles or
 register Context Mode. Install both with `"decks": ["developer", "designer"]`.
@@ -348,6 +354,9 @@ roles cannot run as separate agents there.
 - **Add a deck:** make a folder `skills/<deck>/` with one folder per skill, and
   list the deck name in the `decks` of each pin that belongs to it. A deck can
   also be only upstream pins, with no folder.
+- **Pick skills from a pin:** add `"include": [...]` to the pin to install only
+  the named skills, or `"exclude": [...]` to drop some. Re-running the installer
+  removes skills it installed earlier that are no longer selected.
 
 ## FAQ
 

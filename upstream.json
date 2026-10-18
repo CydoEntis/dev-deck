@@ -64,7 +64,17 @@
       "ref": "main",
       "skillsPath": "skills",
       "decks": ["designer"],
-      "note": "UX and design strategy skills (intent, strategize, journey, wireframe, evaluate, specify, ...). CC0."
+      "include": ["evaluate", "wireframe", "articulate", "include", "fortify"],
+      "note": "Picked from Intent (CC0): evaluate, wireframe, articulate, include (accessibility), fortify. wireframe and others point at skills left out (journey, organize, localize, specify), so those references will not resolve."
+    },
+    {
+      "name": "emil",
+      "url": "https://github.com/emilkowalski/skills",
+      "ref": "main",
+      "skillsPath": "skills",
+      "decks": ["designer"],
+      "include": ["emil-design-eng", "animate", "animation-performance", "review-animations", "break-ui", "mobile-native", "apple-design", "animation-vocabulary"],
+      "note": "Picked from Emil Kowalski's skills (MIT): motion and polish. prototype is left out because it clashes with the developer deck's prototype."
     }
   ]
 }

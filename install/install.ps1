@@ -46,6 +46,12 @@ function Get-Model([string]$HostName, [string]$Role) {
     return $v
 }
 
+# "include" takes only the named skills; "exclude" drops the named ones.
+function Test-PinSkill($Pin, [string]$Skill) {
+    if ($Pin.include) { return $Pin.include -contains $Skill }
+    return -not ($Pin.exclude -contains $Skill)
+}
+
 # --- fetch upstreams ----------------------------------------------------
 $Up = Read-Json (Join-Path $Root 'upstream.json')
 $CacheDir = Join-Path $Root 'cache'
@@ -91,7 +97,7 @@ foreach ($Pin in $Up.pins) {
     if (-not (Test-Path $Sp)) { $Issues += "skillsPath not found in $($Pin.name): $Sp"; continue }
     Get-ChildItem -Path $Sp -Recurse -Depth 3 -Filter 'SKILL.md' -File | ForEach-Object {
         $Dir = $_.Directory
-        $SkillNames[$Dir.Name] = @{ source = $Pin.name; path = $Dir.FullName }
+        if (Test-PinSkill $Pin $Dir.Name) { $SkillNames[$Dir.Name] = @{ source = $Pin.name; path = $Dir.FullName } }
     }
 }
 
@@ -144,6 +150,14 @@ foreach ($Name in $ManifestSkills.Keys) {
     }
 }
 Write-Host "installed $Installed skill copies, skipped $Skipped personal conflict(s)"
+
+# Remove skills we installed earlier that are no longer selected.
+Get-ChildItem -Path (Join-Path $HOME '.claude/skills') -Directory | Where-Object {
+    (Test-Path (Join-Path $_.FullName '.devdeck')) -and -not $ManifestSkills.ContainsKey($_.Name)
+} | ForEach-Object {
+    Remove-Item $_.FullName -Recurse -Force
+    Write-Host "remove  '$($_.Name)' is no longer selected"
+}
 
 # --- role agent files -----------------------------------------------------
 # Each host gets roles in its own format: Claude Code as markdown, Codex as TOML.

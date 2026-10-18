@@ -46,6 +46,13 @@ def quiet(args):
     return subprocess.run([exe, *args[1:]], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
 
 
+def keep_skill(pin, skill):
+    # "include" takes only the named skills; "exclude" drops the named ones.
+    if pin.get("include"):
+        return skill in pin["include"]
+    return skill not in pin.get("exclude", [])
+
+
 def markdown_agent(raw, model, host):
     if model:
         return re.sub(r"\{\{\w+\}\}", model, raw)
@@ -131,6 +138,8 @@ def main():
         for skill_md in base.rglob("SKILL.md"):
             if len(skill_md.parent.relative_to(base).parts) > 3:
                 continue
+            if not keep_skill(pin, skill_md.parent.name):
+                continue
             skill_names[skill_md.parent.name] = (name, skill_md.parent)
 
     # --- install skills ------------------------------------------------------
@@ -170,6 +179,12 @@ def main():
         marker.write_text(manifest_skills[name], encoding="utf-8")
         installed += 1
     print(f"installed {installed} skill copies, skipped {skipped} personal conflict(s)")
+
+    # Remove skills we installed earlier that are no longer selected.
+    for d in target.iterdir():
+        if d.is_dir() and not is_link(d) and (d / ".devdeck").exists() and d.name not in manifest_skills:
+            shutil.rmtree(d)
+            print(f"remove  '{d.name}' is no longer selected")
 
     # --- role agent files ----------------------------------------------------
     templates = sorted((ROOT / "agents").glob("*.md")) if "developer" in decks else []
