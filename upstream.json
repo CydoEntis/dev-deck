@@ -5,7 +5,7 @@
       "name": "pstack",
       "url": "https://github.com/michael-denyer/pstack-claude",
       "ref": "main",
-      "skillsPath": "skills",
+      "skillsPath": "plugins/pstack/skills",
       "note": "poteto's pstack pipeline (Claude port). Official Cursor source: github.com/cursor/plugins (pstack)."
     },
     {
