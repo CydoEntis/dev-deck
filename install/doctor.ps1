@@ -29,12 +29,13 @@ if (-not (Test-Path $Cfg)) {
 # template vars. Other agents in the same dir are not ours to check.
 $Roles = (Get-ChildItem (Join-Path $Root 'agents') -Filter '*.md' -File).BaseName
 $AgentDirs = @(
-    (Join-Path $HOME '.config/opencode/agent'),
-    (Join-Path $HOME '.claude/agents')
+    (Join-Path $HOME '.claude/agents'),
+    (Join-Path $HOME '.config/opencode/agents'),
+    (Join-Path $HOME '.codex/agents')
 )
 foreach ($Dir in $AgentDirs) {
     if (Test-Path $Dir) {
-        $Files = Get-ChildItem $Dir -Filter '*.md' -File | Where-Object { $_.BaseName -in $Roles }
+        $Files = Get-ChildItem $Dir -File | Where-Object { $_.BaseName -in $Roles }
         Check "no {{...}} vars in $Dir" { -not ($Files | Where-Object { (Get-Content $_.FullName -Raw) -match '\{\{[A-Z_]+\}\}' }) }
     }
 }
@@ -45,6 +46,12 @@ $SkillRoot = Join-Path $HOME '.claude/skills'
 $Bad = Get-ChildItem $SkillRoot -Directory -ErrorAction SilentlyContinue |
     Where-Object { (Test-Path (Join-Path $_.FullName '.devdeck')) -and -not (Test-Path (Join-Path $_.FullName 'SKILL.md')) }
 Check "all skill dirs have SKILL.md" { -not $Bad }
+
+# Pins marked "required" in upstream.json must be installed as skills.
+$Up = Get-Content (Join-Path $Root 'upstream.json') -Raw | ConvertFrom-Json
+foreach ($Pin in ($Up.pins | Where-Object { $_.required })) {
+    Check "required skill '$($Pin.name)' installed" { Test-Path (Join-Path $SkillRoot "$($Pin.name)/SKILL.md") }
+}
 
 Write-Host ""
 if ($Fails -eq 0) {
