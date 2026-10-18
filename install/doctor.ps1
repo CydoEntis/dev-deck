@@ -25,22 +25,25 @@ if (-not (Test-Path $Cfg)) {
     exit 1
 }
 
-# Role files must have no unsubstituted template vars.
+# Dev Deck role files (named after agents/*.md) must have no unsubstituted
+# template vars. Other agents in the same dir are not ours to check.
+$Roles = (Get-ChildItem (Join-Path $Root 'agents') -Filter '*.md' -File).BaseName
 $AgentDirs = @(
     (Join-Path $HOME '.config/opencode/agent'),
     (Join-Path $HOME '.claude/agents')
 )
 foreach ($Dir in $AgentDirs) {
     if (Test-Path $Dir) {
-        $Files = Get-ChildItem $Dir -Filter '*.md' -File
+        $Files = Get-ChildItem $Dir -Filter '*.md' -File | Where-Object { $_.BaseName -in $Roles }
         Check "no {{...}} vars in $Dir" { -not ($Files | Where-Object { (Get-Content $_.FullName -Raw) -match '\{\{[A-Z_]+\}\}' }) }
     }
 }
 
-# Every installed skill dir must contain a SKILL.md.
+# Every skill dir the installer wrote (marked .devdeck) must contain a SKILL.md.
+# Unmarked dirs are personal skills or links; the installer never touches them.
 $SkillRoot = Join-Path $HOME '.claude/skills'
 $Bad = Get-ChildItem $SkillRoot -Directory -ErrorAction SilentlyContinue |
-    Where-Object { -not (Test-Path (Join-Path $_.FullName 'SKILL.md')) }
+    Where-Object { (Test-Path (Join-Path $_.FullName '.devdeck')) -and -not (Test-Path (Join-Path $_.FullName 'SKILL.md')) }
 Check "all skill dirs have SKILL.md" { -not $Bad }
 
 Write-Host ""
