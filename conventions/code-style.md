@@ -3,7 +3,8 @@
 These rules apply to every project in the deck. They are language-agnostic
 principles, not stack-specific idioms. Per-project stack rules live in that
 project's own `AGENTS.md`. For how to approach a kind of task (new app,
-refactor, debug, performance, and so on), see [`playbooks/`](playbooks/README.md).
+refactor, debug, performance, and so on), use the `playbook-*` skills; see
+[`playbooks/README.md`](playbooks/README.md).
 
 ## Architecture
 
@@ -25,9 +26,10 @@ refactor, debug, performance, and so on), see [`playbooks/`](playbooks/README.md
 
 - **Small and explicit.** A function does one thing and its name says what.
   If you need a comment to explain what it does, it does too many things.
-- **No fat functions.** A function past ~40 lines, or with more than ~3
-  meaningful parameters, is a smell — split it. Prefer returning values over
-  mutating shared state.
+- **No fat functions.** Split a function when it does more than one thing,
+  not because it is long. Past ~40 lines or ~3 meaningful parameters, look for a
+  second job. Don't split into pieces a reader must read together to understand
+  either one. Prefer returning values over mutating shared state.
 - **DRY.** Copy-paste a piece of logic twice and you may repeat it. A third
   time means extract it. Don't preemptively DRY code that hasn't proven it's
   duplicated.
