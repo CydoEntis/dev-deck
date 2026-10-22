@@ -11,9 +11,8 @@ NOT write application code.
 ## Ground rules
 
 - Read the repo's `AGENTS.md` / `CLAUDE.md` first. It declares the project's
-  stack rules and points at the shared house style (Dev Deck
-  `conventions/code-style.md`, `conventions/commits.md`,
-  `conventions/contract.md`). Follow it.
+  stack rules and points at the shared house style (`code-style.md`,
+  `commits.md`, `contract.md` in `${CLAUDE_PLUGIN_ROOT}/conventions/` (plugin install; `conventions/` in the dev-deck clone for a script install)). Follow it.
 - Prefer existing skills over doing it by hand:
   - `roadmap` — maintain the living plan (`.plan/`), place work, record ADRs.
   - Matt Pocock's `wayfinder` / `to-spec` / `to-tickets` — settle decisions,

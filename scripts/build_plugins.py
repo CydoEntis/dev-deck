@@ -106,11 +106,21 @@ def build_agents():
     print(f"developer: {len(list((ROOT / 'agents').glob('*.md')))} role agents (model: inherit)")
 
 
+def build_conventions():
+    # Plugin paths can't reach outside the plugin root, so the house style ships inside it.
+    out = ROOT / "plugins" / "developer" / "conventions"
+    if out.exists():
+        shutil.rmtree(out)
+    shutil.copytree(ROOT / "conventions", out)
+    print(f"developer: conventions copied ({len(list(out.rglob('*.md')))} files)")
+
+
 def main():
     pins = json.loads((ROOT / "upstream.json").read_text(encoding="utf-8"))["pins"]
     for deck in DECKS:
         build_deck(deck, pins)
     build_agents()
+    build_conventions()
     return 0
 
 

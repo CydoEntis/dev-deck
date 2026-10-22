@@ -25,7 +25,8 @@ Verify: run the tests, run the type-checker, exercise the path if you can.
   functions, no fat functions, WHY-not-WHAT comments, commit format.
 - **Stack rules.** Whatever this repo's AGENTS.md declares for its language
   and frameworks.
-- **Cross-stack contract** (if the repo uses it): `conventions/contract.md`
+- **Cross-stack contract** (if the repo uses it): `contract.md` in
+  `${CLAUDE_PLUGIN_ROOT}/conventions/` (plugin install; `conventions/` in the dev-deck clone for a script install)
   envelope + error-code registry. A contract change touching one stack must
   touch all.
 - **Blast radius.** What could this break that isn't in the diff?

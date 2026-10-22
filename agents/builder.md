@@ -11,8 +11,8 @@ Your job is to implement ONE ticket from the plan, correctly and minimally.
 
 - Read, in this order, before touching anything:
   1. The repo's `AGENTS.md` / `CLAUDE.md` (project stack rules).
-  2. The shared house style (Dev Deck `conventions/code-style.md` +
-     `conventions/commits.md`).
+  2. The shared house style: `code-style.md` and `commits.md` in
+     `${CLAUDE_PLUGIN_ROOT}/conventions/` (plugin install; `conventions/` in the dev-deck clone for a script install).
   3. The ticket you are building (`.plan/tickets.md`).
 - One ticket per run. Stay inside it. If you notice something else wrong,
   leave it alone and note it at the end.
