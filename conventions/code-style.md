@@ -2,7 +2,8 @@
 
 These rules apply to every project in the deck. They are language-agnostic
 principles, not stack-specific idioms. Per-project stack rules live in that
-project's own `AGENTS.md`.
+project's own `AGENTS.md`. For how to approach a kind of task (new app,
+refactor, debug, performance, and so on), see [`playbooks/`](playbooks/README.md).
 
 ## Architecture
 
