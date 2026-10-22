@@ -36,6 +36,10 @@ Draft a short section (15–40 lines). Include:
 - **Stack:** <language, framework, runtime> (detected from <manifest>)
 - **House style:** the shared conventions apply — vertical slice,
   colocation, small explicit functions, DRY/KISS, WHY-not-WHAT comments.
+- **Task modes:** use the matching `playbook-*` skill (new-app, system-design,
+  multi-agent-build, understand-and-refactor, debug, performance, restructure,
+  ui-component). Rule order: the user's request, then this file, then the Dev
+  Deck conventions, then the playbook.
 - **Commits:** `feat(scope): ...` / `fix(scope): ...`, one logical change per
   commit, no `git add -A`.
 - **Stack rules:**
