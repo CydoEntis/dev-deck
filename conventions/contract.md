@@ -50,12 +50,15 @@ Rules:
   codes.
 - `error.message` is for humans — a toast or inline error. Under ~200 chars,
   never a stack trace.
+- Clients branch on `error.code` and `error.details`, never on `message`
+  text. Any value a client needs goes in `details`.
 - `error.details` is optional and structured — the carrier slot for
   machine-readable extras. Multi-field validation uses
   `details.fieldErrors: Record<string, string>`.
 - `meta` is required on every response (success and failure):
-  - `requestId`: UUID v4 correlation id. Honors an incoming `X-Request-Id`
-    header; otherwise generates one.
+  - `requestId`: UUID v4 correlation id. Honor an incoming `X-Request-Id`
+    only if it is a valid UUID; otherwise generate one. Never log an
+    unvalidated client id.
   - `ms`: integer milliseconds elapsed server-side.
   - `version`: API version string, currently `"v1"`. Bumps only when the
     envelope shape itself changes.
@@ -71,8 +74,8 @@ Rules:
 |---|:---:|---|
 | `VALIDATION` | 400 | Input failed schema validation. Covers shape-wrong and semantically-invalid. Use `details.fieldErrors` for multi-field forms. |
 | `UNAUTHENTICATED` | 401 | No valid session/token; anonymous or expired credentials. |
-| `FORBIDDEN` | 403 | Authenticated but lacks permission. Also row-level denial. |
-| `NOT_FOUND` | 404 | Resource does not exist. Also "exists but you cannot see it" (avoid leaking existence). |
+| `FORBIDDEN` | 403 | Authenticated, allowed to know the resource exists, but lacks permission for this action (e.g. editing something shared read-only). |
+| `NOT_FOUND` | 404 | Resource does not exist, or the caller can't see it. Row-level denial on a row the caller can't see is always NOT_FOUND, never FORBIDDEN (don't leak existence). |
 | `CONFLICT` | 409 | Unique-constraint violation, optimistic-lock failure, duplicate creation. |
 | `RATE_LIMIT` | 429 | Too many requests. Send a `Retry-After` header when possible. |
 | `UPSTREAM` | 502 | Downstream dependency failure (external API, third-party service, DB connectivity). Caller may retry. |
@@ -89,6 +92,8 @@ Rules:
 - Adding a code is a contract change (minor). Removing/renaming is major.
 - Clients may safely ignore unknown codes by falling back to `error.message`.
   New codes are non-breaking for consumers.
+- Unique constraints that span users leak existence through `CONFLICT`. Scope
+  them per user, or make the value unguessable.
 
 Client-only synthesized codes (server never emits these):
 
@@ -110,6 +115,14 @@ handler converts errors to the envelope.
 - Handlers never raise raw framework exceptions (e.g. `HTTPException`) — they
   raise the base-error subclasses; the handler emits the envelope.
 - No bare `catch`/`except` around the handler; catch specific types.
+- The top-level handler also converts framework and middleware errors (e.g.
+  Hono's `HTTPException`) by status: 400/413 → VALIDATION, 401 →
+  UNAUTHENTICATED, 404 → NOT_FOUND, 429 → RATE_LIMIT, anything else → INTERNAL.
+  Register it once on the root app (Hono: `app.onError` plus `app.notFound`).
+- Unknown routes return the NOT_FOUND envelope. Validator failures throw
+  `ValidationError` (pass a hook so the validator's own body never escapes).
+  Error responses keep `X-Request-Id` and CORS headers; test it, because a
+  missing CORS header turns an error into a client `NETWORK_ERROR`.
 
 ## 4. Constants module
 
@@ -133,6 +146,9 @@ breaking envelope change means a `v2` parallel mount with a deprecation window.
 External webhooks (fixed URLs, HMAC-signed) may live at unversioned paths —
 they are outside the envelope contract.
 
+Within a version, a route's `data` changes only by adding fields. A breaking
+change to a route needs a new route or a new version.
+
 ## 6. Two-type-layer rule (TypeScript frontends)
 
 | Location | What lives there |
@@ -152,6 +168,11 @@ the app's local layer if purely internal.
 - **Pagination.** Belongs inside `data`.
 - **Rate-limit metadata.** Use HTTP headers (`Retry-After`,
   `X-RateLimit-Remaining`), not the envelope.
+- **Tracing.** `traceparent` (W3C Trace Context) may be accepted and propagated
+  alongside `X-Request-Id`, never instead of it. Never forward either header to
+  third-party or user-supplied URLs.
+- **Problem Details (RFC 9457).** Not emitted; RFC 9457 allows an existing
+  format. Revisit only if third parties consume the API.
 - **Streaming / SSE / WebSocket.** Different framing; out of scope.
 - **File upload / download.** Multipart and binary responses are out of scope.
 
